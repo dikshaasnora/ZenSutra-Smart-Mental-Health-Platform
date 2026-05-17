@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Zensutra — Zen AI</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="dashboard.css">
+<style>
+.chat-layout { display:grid;grid-template-columns:300px 1fr;gap:14px;height:calc(100vh - 180px); }
+.chat-window { display:flex;flex-direction:column;background:rgba(20,26,34,.9);border:1px solid var(--border);border-radius:20px;overflow:hidden; }
+.chat-header { padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.03); }
+.ai-avatar  { width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--lavender),var(--sage2));display:flex;align-items:center;justify-content:center;font-size:18px;animation:ai-pulse 3s ease-in-out infinite;flex-shrink:0; }
+@keyframes ai-pulse{0%,100%{box-shadow:0 0 0 0 rgba(155,114,207,.4);}50%{box-shadow:0 0 0 8px rgba(155,114,207,0);}}
+.ai-name   { font-weight:600;font-size:15px;color:#fff; }
+.ai-status { font-size:11px;color:var(--sage2);display:flex;align-items:center;gap:4px; }
+.status-dot{ width:6px;height:6px;border-radius:50%;background:var(--sage2);animation:blink 2s infinite; }
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.chat-msgs  { flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px; }
+.chat-msgs::-webkit-scrollbar{width:4px;} .chat-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:2px;}
+.msg { max-width:78%;animation:msg-in .3s ease; }
+@keyframes msg-in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.msg.user { align-self:flex-end; }
+.msg.ai   { align-self:flex-start; }
+.bubble { padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.6; }
+.msg.ai   .bubble { background:rgba(45,106,79,.18);border:1px solid rgba(82,183,136,.18);border-bottom-left-radius:4px;color:rgba(255,255,255,.92); }
+.msg.user .bubble { background:linear-gradient(135deg,#9b72cf,#7c4dcc);border-bottom-right-radius:4px;color:#fff; }
+.msg-time { font-size:10px;color:rgba(255,255,255,.28);margin-top:4px;padding:0 4px; }
+.msg.user .msg-time { text-align:right; }
+.typing-dots { display:flex;gap:4px;align-items:center;padding:12px 16px;background:rgba(45,106,79,.18);border:1px solid rgba(82,183,136,.18);border-radius:16px;border-bottom-left-radius:4px;width:fit-content; }
+.tdot { width:7px;height:7px;background:var(--sage2);border-radius:50%;animation:tdot 1.4s ease-in-out infinite; }
+.tdot:nth-child(2){animation-delay:.2s;} .tdot:nth-child(3){animation-delay:.4s;}
+@keyframes tdot{0%,80%,100%{transform:scale(.6);opacity:.5;}40%{transform:scale(1);opacity:1;}}
+.quick-replies { display:flex;gap:8px;flex-wrap:wrap;padding:10px 20px 6px; }
+.qr-chip { padding:7px 14px;border-radius:100px;font-size:12px;border:1px solid var(--border);background:var(--glass);color:rgba(255,255,255,.6);cursor:pointer;transition:all .2s;white-space:nowrap; }
+.qr-chip:hover { background:var(--glass2);color:#fff;border-color:rgba(82,183,136,.3); }
+.chat-input-row { padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center; }
+.chat-input { flex:1;background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:10px 16px;font-size:14px;color:#fff;font-family:'DM Sans',sans-serif;outline:none;transition:all .2s; }
+.chat-input:focus { border-color:rgba(82,183,136,.4);background:var(--glass2); }
+.chat-input::placeholder { color:rgba(255,255,255,.25); }
+.send-btn { width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;color:#fff;font-size:14px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center; }
+.send-btn:hover { opacity:.9;transform:scale(1.05); }
+/* Side panel */
+.side-panel { display:flex;flex-direction:column;gap:12px;overflow-y:auto; }
+.side-card  { background:rgba(30,37,48,.7);border:1px solid var(--border);border-radius:16px;padding:18px; }
+.side-title { font-size:10px;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.3);font-weight:600;margin-bottom:14px; }
+.mood-sel   { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+.mood-opt   { padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:var(--glass);font-size:12px;color:rgba(255,255,255,.6);cursor:pointer;text-align:center;transition:all .2s; }
+.mood-opt:hover { background:var(--glass2);color:#fff; }
+.mood-opt.sel   { border-color:rgba(82,183,136,.5);background:rgba(82,183,136,.1);color:var(--sage2); }
+.conv-item { padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--glass);margin-bottom:6px;cursor:pointer;transition:all .2s; }
+.conv-item:hover { background:var(--glass2); }
+.conv-user { font-size:12px;color:rgba(255,255,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px; }
+.conv-ai   { font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.conv-time { font-size:10px;color:rgba(255,255,255,.25);margin-top:3px; }
+.crisis-box { background:rgba(224,112,128,.08);border:1px solid rgba(224,112,128,.2);border-radius:12px;padding:14px; }
+.crisis-title { font-size:12px;font-weight:600;color:var(--rose);margin-bottom:8px; }
+.crisis-line  { font-size:12px;color:rgba(255,255,255,.65);margin-bottom:4px; }
+.crisis-line a { color:var(--rose);text-decoration:none; }
+@media(max-width:900px){ .chat-layout{grid-template-columns:1fr;} .side-panel{display:none;} }
+</style>
+</head>
+<body>
+<div class="bg-orbs"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+<div class="particles" id="particles"></div>
+<div class="app-layout">
+  <!-- Sidebar nav (reuse) -->
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">🧠</div><div><div class="logo-name">Zensutra</div><div class="logo-tagline">Smart Mental Health</div></div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Overview</div>
+      <a href="dashboard.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-home"></i><span>Dashboard</span></a>
+      <a href="mood.html"      class="nav-link"><div class="nav-dot"></div><i class="fas fa-heart-pulse"></i><span>Mood Tracker</span></a>
+      <div class="nav-group-label">Wellness Tools</div>
+      <a href="AI-support.html"  class="nav-link active"><div class="nav-dot"></div><i class="fas fa-robot"></i><span>Zen AI</span></a>
+      <a href="breathe.html"     class="nav-link"><div class="nav-dot"></div><i class="fas fa-wind"></i><span>Breathe</span></a>
+      <a href="journal.html"     class="nav-link"><div class="nav-dot"></div><i class="fas fa-book-open"></i><span>Journal</span></a>
+      <div class="nav-group-label">Care</div>
+      <a href="resources.html"   class="nav-link"><div class="nav-dot"></div><i class="fas fa-layer-group"></i><span>Resources</span></a>
+      <a href="appointment.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-calendar-check"></i><span>Appointments</span></a>
+      <a href="mental-home.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-clipboard-list"></i><span>Assessment</span></a>
+      <div class="nav-group-label">Account</div>
+      <a href="profile.html"  class="nav-link"><div class="nav-dot"></div><i class="fas fa-user"></i><span>Profile</span></a>
+      <a href="setting.html"  class="nav-link"><div class="nav-dot"></div><i class="fas fa-sliders"></i><span>Settings</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card"><div class="user-av" id="sidebar-av">U</div><div><div class="user-name" id="sidebar-name">User</div><div class="user-role">Premium</div></div><button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button></div>
+    </div>
+  </aside>
+
+  <main class="main-area">
+    <div class="main-inner">
+      <div class="page-header">
+        <div>
+          <div class="page-eyebrow">AI-powered support</div>
+          <h1 class="page-title">Zen <em>AI</em></h1>
+          <div class="page-sub">Powered by Google Gemini · Safe, empathetic, confidential</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-ghost" onclick="clearChat()"><i class="fas fa-rotate"></i> New Session</button>
+        </div>
+      </div>
+
+      <div class="chat-layout">
+        <!-- Chat window -->
+        <div class="chat-window" style="grid-column:2;grid-row:1;">
+          <div class="chat-header">
+            <div class="ai-avatar">✨</div>
+            <div>
+              <div class="ai-name">Zen — Zensutra Wellness AI</div>
+              <div class="ai-status"><div class="status-dot"></div>Online · Ready to listen</div>
+            </div>
+            <button class="btn btn-ghost" style="margin-left:auto;font-size:12px;padding:6px 12px;" onclick="clearChat()">Clear</button>
+          </div>
+          <div class="chat-msgs" id="chat-msgs"></div>
+          <div class="quick-replies" id="quick-replies">
+            <div class="qr-chip" onclick="sendQuick(this)">Feeling anxious today 😟</div>
+            <div class="qr-chip" onclick="sendQuick(this)">I need to vent 💬</div>
+            <div class="qr-chip" onclick="sendQuick(this)">Help me breathe</div>
+            <div class="qr-chip" onclick="sendQuick(this)">I'm doing great! 😊</div>
+            <div class="qr-chip" onclick="sendQuick(this)">Can't sleep</div>
+            <div class="qr-chip" onclick="sendQuick(this)">Exam stress</div>
+          </div>
+          <div class="chat-input-row">
+            <input class="chat-input" id="chat-input" placeholder="Share what's on your mind..." maxlength="1000"
+                   onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}">
+            <button class="send-btn" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+          </div>
+        </div>
+
+        <!-- Side panel -->
+        <div class="side-panel" style="grid-column:1;grid-row:1;">
+          <!-- Mood context -->
+          <div class="side-card">
+            <div class="side-title">How are you feeling?</div>
+            <div class="mood-sel">
+              <div class="mood-opt" onclick="setMoodCtx(this,'Happy')">😊 Happy</div>
+              <div class="mood-opt" onclick="setMoodCtx(this,'Calm')">😌 Calm</div>
+              <div class="mood-opt" onclick="setMoodCtx(this,'Anxious')">😟 Anxious</div>
+              <div class="mood-opt" onclick="setMoodCtx(this,'Sad')">😔 Sad</div>
+              <div class="mood-opt" onclick="setMoodCtx(this,'Stressed')">😤 Stressed</div>
+              <div class="mood-opt" onclick="setMoodCtx(this,'Angry')">😡 Angry</div>
+            </div>
+          </div>
+
+          <!-- Recent conversations -->
+          <div class="side-card">
+            <div class="side-title">Recent sessions</div>
+            <div id="history-list"><div style="font-size:12px;color:var(--muted);text-align:center;padding:16px 0;">Load your chat history below</div></div>
+            <button class="btn btn-ghost" style="width:100%;font-size:12px;margin-top:8px;" onclick="loadHistory()"><i class="fas fa-history"></i> Load History</button>
+          </div>
+
+          <!-- Crisis box -->
+          <div class="side-card">
+            <div class="crisis-box">
+              <div class="crisis-title">🆘 Need immediate help?</div>
+              <div class="crisis-line"><a href="tel:9152987821"><b>iCall:</b> 9152987821</a></div>
+              <div class="crisis-line"><a href="tel:02227546669"><b>AASRA:</b> 022-27546669</a></div>
+              <div class="crisis-line"><a href="tel:18602662345"><b>Vandrevala:</b> 1860-2662-345</a></div>
+              <div class="crisis-line"><a href="tel:112"><b>Emergency:</b> 112</a></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+requireAuth();
+
+const user = getUser();
+document.getElementById('sidebar-av').textContent   = ((user.firstName||'').charAt(0)+(user.lastName||'').charAt(0)).toUpperCase()||'U';
+document.getElementById('sidebar-name').textContent = (user.firstName||'User')+' '+(user.lastName||'');
+
+// Particles
+(function(){const c=document.getElementById('particles');for(let i=0;i<30;i++){const p=document.createElement('div');p.className='particle';p.style.cssText=`left:${Math.random()*100}%;width:${Math.random()*3+1}px;height:${Math.random()*3+1}px;animation-duration:${Math.random()*20+15}s;animation-delay:${-(Math.random()*20)}s;opacity:${Math.random()*.3+.1}`;c.appendChild(p);}})();
+
+let currentMood = null;
+
+// ── Initial welcome message ──────────────────────────────────
+window.addEventListener('load', () => {
+  addMsg("Namaste! 🙏 I'm Zen, your personal mental wellness companion. I'm here to listen — without judgment, without pressure. How are you feeling right now?", 'ai');
+});
+
+// ── Mood context ─────────────────────────────────────────────
+function setMoodCtx(el, label) {
+  document.querySelectorAll('.mood-opt').forEach(m => m.classList.remove('sel'));
+  el.classList.add('sel');
+  currentMood = { label, createdAt: new Date().toISOString() };
+  showInfo(`Zen will respond with ${label} in mind 💚`);
+}
+
+// ── Send message ─────────────────────────────────────────────
+let isTyping = false;
+async function sendMsg() {
+  const input = document.getElementById('chat-input');
+  const msg   = input.value.trim();
+  if (!msg || isTyping) return;
+  input.value = '';
+  document.getElementById('quick-replies').style.display = 'none';
+  addMsg(msg, 'user');
+  showTyping();
+  isTyping = true;
+
+  try {
+    // Build conversation context (last 3 turns)
+    const msgs  = document.querySelectorAll('.msg');
+    const ctxParts = [];
+    let count = 0;
+    msgs.forEach(m => {
+      if (count >= 6) return;
+      const txt = m.querySelector('.bubble')?.textContent;
+      if (txt) { ctxParts.push((m.classList.contains('user')?'User':'Zen')+': '+txt.slice(0,100)); count++; }
+    });
+
+    const data = await authFetch('/api/ai/chat', {
+      method: 'POST',
+      body: { message: msg, mood: currentMood, context: ctxParts.join('\n') },
+    });
+
+    hideTyping();
+    isTyping = false;
+
+    if (data?.success) {
+      addMsg(data.response, 'ai');
+      if (data.type === 'emergency') showWarning('If you are in crisis, please call the helplines on the left.');
+    } else {
+      addMsg("I'm having a moment — please try again. 🌿", 'ai');
+    }
+  } catch(e) {
+    hideTyping(); isTyping = false;
+    addMsg("Connection issue. Check your internet and try again.", 'ai');
+  }
+}
+
+function sendQuick(el) {
+  document.getElementById('chat-input').value = el.textContent.trim();
+  sendMsg();
+}
+
+// ── Chat DOM helpers ─────────────────────────────────────────
+function addMsg(text, who) {
+  const container = document.getElementById('chat-msgs');
+  const div = document.createElement('div');
+  div.className = `msg ${who}`;
+  const time = new Date().toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'});
+  div.innerHTML = `<div class="bubble">${text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')}</div><div class="msg-time">${time}</div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+let typingEl = null;
+function showTyping() {
+  const container = document.getElementById('chat-msgs');
+  typingEl = document.createElement('div');
+  typingEl.className = 'msg ai';
+  typingEl.id = 'typing-el';
+  typingEl.innerHTML = '<div class="typing-dots"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>';
+  container.appendChild(typingEl);
+  container.scrollTop = container.scrollHeight;
+}
+function hideTyping() { if(typingEl){ typingEl.remove(); typingEl = null; } }
+
+function clearChat() {
+  document.getElementById('chat-msgs').innerHTML = '';
+  document.getElementById('quick-replies').style.display = 'flex';
+  addMsg("Starting fresh! 🌱 I'm here whenever you're ready. What's on your mind?", 'ai');
+}
+
+// ── Load history ─────────────────────────────────────────────
+async function loadHistory() {
+  try {
+    const data = await authFetch('/api/ai/conversation?limit=10');
+    if (!data?.success || !data.conversations.length) {
+      showInfo('No previous conversations found.');
+      return;
+    }
+    const list = document.getElementById('history-list');
+    list.innerHTML = '';
+    data.conversations.slice(-5).reverse().forEach(c => {
+      const div = document.createElement('div');
+      div.className = 'conv-item';
+      div.innerHTML = `<div class="conv-user">${c.userMessage.slice(0,50)}${c.userMessage.length>50?'...':''}</div>
+        <div class="conv-ai">${c.aiResponse.slice(0,60)}...</div>
+        <div class="conv-time">${timeAgo(c.createdAt)}</div>`;
+      list.appendChild(div);
+    });
+  } catch { showError('Could not load history.'); }
+}
+</script>
+</body>
+</html>

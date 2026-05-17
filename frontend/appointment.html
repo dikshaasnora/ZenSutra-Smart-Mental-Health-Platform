@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Zensutra — Appointments</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="dashboard.css">
+<style>
+.specialist-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:20px; }
+.spec-card {
+  background:var(--glass);border:1px solid var(--border);border-radius:16px;
+  padding:20px;cursor:pointer;transition:all .22s;
+}
+.spec-card:hover { border-color:rgba(255,255,255,.18);transform:translateY(-3px); }
+.spec-card.selected { border-color:rgba(82,183,136,.5);background:rgba(82,183,136,.06); }
+.spec-av   { width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--sage2),var(--lavender));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;margin-bottom:12px; }
+.spec-name { font-size:15px;font-weight:600;color:#fff;margin-bottom:4px; }
+.spec-role { font-size:12px;color:var(--sage2);margin-bottom:6px; }
+.spec-meta { font-size:11px;color:var(--muted); }
+.spec-rate { font-size:12px;font-weight:600;color:var(--gold);margin-top:8px; }
+
+.time-slots { display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-bottom:16px; }
+.time-slot  {
+  padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:var(--glass);
+  font-size:13px;font-weight:500;color:rgba(255,255,255,.6);cursor:pointer;text-align:center;transition:all .2s;
+}
+.time-slot:hover        { background:var(--glass2);color:#fff; }
+.time-slot.selected     { border-color:rgba(82,183,136,.5);background:rgba(82,183,136,.12);color:var(--sage2); }
+.time-slot.unavailable  { opacity:.35;cursor:not-allowed; }
+
+.booking-form input, .booking-form select, .booking-form textarea {
+  width:100%;background:var(--glass);border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:all .2s;
+}
+.booking-form input:focus, .booking-form select:focus, .booking-form textarea:focus {
+  border-color:rgba(82,183,136,.4);background:var(--glass2);
+}
+.booking-form input::placeholder, .booking-form textarea::placeholder { color:rgba(255,255,255,.25); }
+.booking-form select option { background:#12181f;color:#fff; }
+.form-label { font-size:12px;color:var(--muted);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:1px; }
+.form-group { margin-bottom:14px; }
+
+.apt-list-item {
+  display:flex;align-items:center;gap:14px;padding:14px;
+  background:var(--glass);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;
+}
+.apt-time-big  { font-family:'DM Serif Display',serif;font-size:20px;color:#fff;min-width:55px; }
+.apt-info-name { font-size:14px;font-weight:600;color:#fff; }
+.apt-info-sub  { font-size:11px;color:var(--muted);margin-top:2px; }
+.status-pill   { margin-left:auto;font-size:10px;padding:4px 10px;border-radius:100px; }
+.status-confirmed { background:rgba(82,183,136,.15);color:var(--sage2);border:1px solid rgba(82,183,136,.2); }
+.status-pending   { background:rgba(244,162,97,.15);color:var(--gold);border:1px solid rgba(244,162,97,.2); }
+.status-cancelled { background:rgba(224,112,128,.1);color:var(--rose);border:1px solid rgba(224,112,128,.2); }
+</style>
+</head>
+<body>
+<div class="bg-orbs"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+<div class="particles" id="particles"></div>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">🧠</div><div><div class="logo-name">Zensutra</div><div class="logo-tagline">Smart Mental Health</div></div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Overview</div>
+      <a href="dashboard.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-home"></i><span>Dashboard</span></a>
+      <a href="mood.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-heart-pulse"></i><span>Mood Tracker</span></a>
+      <div class="nav-group-label">Wellness Tools</div>
+      <a href="AI-support.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-robot"></i><span>Zen AI</span></a>
+      <a href="breathe.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-wind"></i><span>Breathe</span></a>
+      <a href="journal.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-book-open"></i><span>Journal</span></a>
+      <div class="nav-group-label">Care</div>
+      <a href="resources.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-layer-group"></i><span>Resources</span></a>
+      <a href="appointment.html" class="nav-link active"><div class="nav-dot"></div><i class="fas fa-calendar-check"></i><span>Appointments</span></a>
+      <a href="mental-home.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-clipboard-list"></i><span>Assessment</span></a>
+      <div class="nav-group-label">Account</div>
+      <a href="profile.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-user"></i><span>Profile</span></a>
+      <a href="setting.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-sliders"></i><span>Settings</span></a>
+    </nav>
+    <div class="sidebar-footer"><div class="user-card"><div class="user-av" id="sidebar-av">U</div><div><div class="user-name" id="sidebar-name">User</div><div class="user-role">Premium</div></div><button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button></div></div>
+  </aside>
+
+  <main class="main-area">
+    <div class="main-inner">
+      <div class="page-header">
+        <div>
+          <div class="page-eyebrow">Professional care</div>
+          <h1 class="page-title">Book a <em>Session</em></h1>
+          <div class="page-sub">Confidential counseling with certified professionals</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <!-- Booking form -->
+        <div class="card" style="grid-column:1 / -1;">
+          <!-- Step 1: Pick specialist -->
+          <div class="card-head">Step 1 — Choose your counselor</div>
+          <div class="specialist-grid" id="specialists">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Step 2: Date & time -->
+          <div class="card-head">Step 2 — Pick date & time</div>
+          <div class="two-col" style="margin-bottom:16px;">
+            <div class="form-group">
+              <label class="form-label">Date</label>
+              <div class="booking-form"><input type="date" id="apt-date" min="" onchange="loadSlots()"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mode</label>
+              <div class="booking-form">
+                <select id="apt-mode">
+                  <option value="video-call">📹 Video Call</option>
+                  <option value="phone-call">📞 Phone Call</option>
+                  <option value="in-office">🏢 In-Office</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="card-head">Available slots</div>
+          <div class="time-slots" id="time-slots">
+            <div style="font-size:13px;color:var(--muted);grid-column:1/-1;">Select a date to see available slots</div>
+          </div>
+
+          <!-- Step 3: Details -->
+          <div class="card-head">Step 3 — Your concerns</div>
+          <div class="booking-form">
+            <div class="form-group">
+              <label class="form-label">Brief description (optional)</label>
+              <textarea id="apt-concerns" rows="3" placeholder="What would you like to discuss? (academic stress, anxiety, relationships, etc.)"></textarea>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:12px;">
+            <div>
+              <div style="font-size:13px;color:var(--muted);">Consultation fee</div>
+              <div style="font-size:22px;font-weight:700;color:var(--sage2);" id="fee-display">₹1,500</div>
+            </div>
+            <button class="btn btn-primary" style="padding:12px 32px;font-size:15px;" onclick="bookAppointment()">
+              <i class="fas fa-calendar-check"></i> Confirm Booking
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Existing appointments -->
+      <div class="card" style="margin-top:14px;">
+        <div class="card-head">Your appointments</div>
+        <div id="apt-list"><div style="text-align:center;padding:20px;color:var(--muted);font-size:14px;">Loading...</div></div>
+      </div>
+
+      <!-- Crisis -->
+      <div style="background:rgba(224,112,128,.07);border:1px solid rgba(224,112,128,.18);border-radius:16px;padding:20px;margin-top:14px;">
+        <div style="font-size:13px;font-weight:700;color:var(--rose);margin-bottom:10px;">🆘 Need immediate support?</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;font-size:13px;color:rgba(255,255,255,.7);">
+          <div><b>iCall:</b> <a href="tel:9152987821" style="color:var(--rose);">9152987821</a></div>
+          <div><b>AASRA:</b> <a href="tel:02227546669" style="color:var(--rose);">022-27546669</a></div>
+          <div><b>Vandrevala:</b> <a href="tel:18602662345" style="color:var(--rose);">1860-2662-345</a></div>
+          <div><b>Emergency:</b> <a href="tel:112" style="color:var(--rose);">112</a></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+requireAuth();
+const user = getUser();
+document.getElementById('sidebar-av').textContent   = ((user.firstName||'').charAt(0)+(user.lastName||'').charAt(0)).toUpperCase()||'U';
+document.getElementById('sidebar-name').textContent = (user.firstName||'User')+' '+(user.lastName||'');
+
+(function(){const c=document.getElementById('particles');for(let i=0;i<30;i++){const p=document.createElement('div');p.className='particle';p.style.cssText=`left:${Math.random()*100}%;width:${Math.random()*3+1}px;height:${Math.random()*3+1}px;animation-duration:${Math.random()*20+15}s;animation-delay:${-(Math.random()*20)}s;opacity:${Math.random()*.3+.1}`;c.appendChild(p);}})();
+
+// Set min date to today
+document.getElementById('apt-date').min = new Date().toISOString().split('T')[0];
+
+const SPECIALISTS = [
+  { id:'sp1', name:'Dr. Rahul Mehta', initials:'RM', role:'Clinical Psychologist', specialty:'Anxiety, Depression', rating:'4.9', fee:1500, bg:'linear-gradient(135deg,#52b788,#2d6a4f)' },
+  { id:'sp2', name:'Dr. Sneha Pillai', initials:'SP', role:'CBT Therapist', specialty:'Stress, Trauma', rating:'4.8', fee:1800, bg:'linear-gradient(135deg,#9b72cf,#7c4dcc)' },
+  { id:'sp3', name:'Dr. Amit Vora', initials:'AV', role:'Mindfulness Expert', specialty:'Mindfulness, Focus', rating:'4.7', fee:1200, bg:'linear-gradient(135deg,#f4a261,#e07080)' },
+  { id:'sp4', name:'Dr. Kavya Nair', initials:'KN', role:'Student Counselor', specialty:'Academic Stress', rating:'4.9', fee:1000, bg:'linear-gradient(135deg,#aed9e0,#52b788)' },
+];
+
+let selectedSpec = null, selectedTime = null;
+
+// Render specialists
+const specContainer = document.getElementById('specialists');
+SPECIALISTS.forEach(s => {
+  const div = document.createElement('div');
+  div.className = 'spec-card';
+  div.id = `spec-${s.id}`;
+  div.innerHTML = `
+    <div class="spec-av" style="background:${s.bg}">${s.initials}</div>
+    <div class="spec-name">${s.name}</div>
+    <div class="spec-role">${s.role}</div>
+    <div class="spec-meta">⭐ ${s.rating} · ${s.specialty}</div>
+    <div class="spec-rate">₹${s.fee.toLocaleString()} / session</div>`;
+  div.onclick = () => {
+    document.querySelectorAll('.spec-card').forEach(c=>c.classList.remove('selected'));
+    div.classList.add('selected');
+    selectedSpec = s;
+    document.getElementById('fee-display').textContent = `₹${s.fee.toLocaleString()}`;
+  };
+  specContainer.appendChild(div);
+});
+
+function loadSlots() {
+  const times = ['9:00 AM','10:00 AM','11:00 AM','12:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM','6:00 PM'];
+  const unavail = [2, 5]; // random unavailable
+  const container = document.getElementById('time-slots');
+  container.innerHTML = '';
+  times.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = `time-slot${unavail.includes(i)?' unavailable':''}`;
+    div.textContent = t;
+    if (!unavail.includes(i)) {
+      div.onclick = () => {
+        document.querySelectorAll('.time-slot').forEach(s=>s.classList.remove('selected'));
+        div.classList.add('selected');
+        selectedTime = t;
+      };
+    }
+    container.appendChild(div);
+  });
+}
+
+async function bookAppointment() {
+  if (!selectedSpec) { showError('Please select a counselor.'); return; }
+  if (!document.getElementById('apt-date').value) { showError('Please pick a date.'); return; }
+  if (!selectedTime) { showError('Please pick a time slot.'); return; }
+
+  const body = {
+    specialistId:        selectedSpec.id,
+    specialistName:      selectedSpec.name,
+    specialistRole:      selectedSpec.role,
+    specialistSpecialty: selectedSpec.specialty,
+    appointmentDate:     document.getElementById('apt-date').value,
+    appointmentTime:     selectedTime,
+    counselingType:      document.getElementById('apt-mode').value,
+    concerns:            document.getElementById('apt-concerns').value,
+    consultationFee:     selectedSpec.fee,
+    patientPhone:        user.mobile || '9999999999',
+  };
+
+  try {
+    const data = await authFetch('/api/appointments', { method:'POST', body });
+    if (data?.success) {
+      showSuccess(`Appointment booked! ID: ${data.data.bookingId} 🎉`);
+      loadAppointments();
+    } else {
+      showError(data?.message || 'Booking failed.');
+    }
+  } catch { showError('Connection error.'); }
+}
+
+async function loadAppointments() {
+  try {
+    const data = await authFetch('/api/appointments?limit=5');
+    const list  = document.getElementById('apt-list');
+    if (!data?.success || !data.data.length) {
+      list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">No appointments booked yet.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    data.data.forEach(apt => {
+      const div = document.createElement('div');
+      div.className = 'apt-list-item';
+      const d = new Date(apt.appointmentDate);
+      const dateStr = d.toLocaleDateString('en-IN',{month:'short',day:'numeric'});
+      const statusClass = {confirmed:'status-confirmed',pending:'status-pending',cancelled:'status-cancelled'}[apt.status]||'status-pending';
+      div.innerHTML = `
+        <div class="apt-time-big">${apt.appointmentTime}</div>
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--sage2),var(--lavender));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;">${apt.specialistName.split(' ').map(w=>w[0]).join('')}</div>
+        <div><div class="apt-info-name">${apt.specialistName}</div><div class="apt-info-sub">${apt.specialistSpecialty} · ${dateStr} · ${apt.counselingType}</div></div>
+        <div class="status-pill ${statusClass}">${apt.status}</div>
+        ${apt.status!=='cancelled'?`<button onclick="cancelApt('${apt._id}')" style="margin-left:8px;background:none;border:1px solid rgba(224,112,128,.3);color:var(--rose);padding:4px 10px;border-radius:8px;cursor:pointer;font-size:11px;">Cancel</button>`:''}`;
+      list.appendChild(div);
+    });
+  } catch { }
+}
+
+async function cancelApt(id) {
+  if (!confirm('Cancel this appointment?')) return;
+  try {
+    const data = await authFetch(`/api/appointments/${id}/cancel`, { method:'PUT' });
+    if (data?.success) { showSuccess('Appointment cancelled.'); loadAppointments(); }
+    else showError(data?.message||'Could not cancel.');
+  } catch { showError('Connection error.'); }
+}
+
+loadAppointments();
+</script>
+</body>
+</html>

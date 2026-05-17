@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAQ — Zensutra</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+  --ink:       #0a0e14;
+  --ink2:      #1e2530;
+  --sage:      #2d6a4f;
+  --sage2:     #52b788;
+  --lavender:  #9b72cf;
+  --glass:     rgba(255,255,255,0.06);
+  --border:    rgba(255,255,255,0.09);
+  --text:      #e8eaf0;
+  --muted:     #8892a4;
+  --r:         12px;
+  --transition: all 0.25s ease;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'DM Sans',sans-serif; background:var(--ink); color:var(--text); line-height:1.6; }
+a { text-decoration:none; color:inherit; }
+
+header {
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(10,14,20,.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border); padding:0 5%;
+}
+.nav-inner { max-width:1280px;margin:0 auto; display:flex;align-items:center;justify-content:space-between; height:68px; }
+.logo { display:flex;align-items:center;gap:10px; }
+.logo-icon { width:36px;height:36px;border-radius:10px; background:linear-gradient(135deg,var(--sage),var(--lavender)); display:flex;align-items:center;justify-content:center;font-size:16px; }
+.logo-name { font-family:'DM Serif Display',serif;font-size:22px;color:#fff; }
+
+main { padding:140px 5% 100px; max-width:800px; margin:0 auto; min-height:80vh; }
+.page-title { font-family:'DM Serif Display',serif;font-size:clamp(32px,5vw,56px); color:#fff; line-height:1.1; margin-bottom:16px; text-align:center; }
+.page-sub { font-size:18px; color:var(--muted); margin-bottom:60px; text-align:center; }
+
+.faq-item {
+  background:var(--glass); border:1px solid var(--border); border-radius:var(--r);
+  margin-bottom:16px; overflow:hidden; transition:var(--transition);
+}
+.faq-header {
+  padding:24px; display:flex; justify-content:space-between; align-items:center;
+  cursor:pointer; font-weight:600; font-size:16px; color:#fff;
+}
+.faq-header i { color:var(--sage2); transition:transform 0.3s ease; }
+.faq-content {
+  padding:0 24px; max-height:0; overflow:hidden; transition:max-height 0.3s ease, padding 0.3s ease;
+  color:var(--muted); font-size:15px;
+}
+.faq-item.active .faq-header i { transform:rotate(180deg); }
+.faq-item.active .faq-content { padding:0 24px 24px; max-height:300px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-inner">
+    <a href="index.html" class="logo"><div class="logo-icon">🧠</div><span class="logo-name">Zensutra</span></a>
+  </div>
+</header>
+
+<main>
+  <h1 class="page-title">Frequently Asked Questions</h1>
+  <p class="page-sub">Find answers to common questions about privacy, features, and support.</p>
+
+  <div class="faq-list">
+    <div class="faq-item">
+      <div class="faq-header">Is my conversation with Zen AI completely private? <i class="fas fa-chevron-down"></i></div>
+      <div class="faq-content">Yes. All chat histories are encrypted using AES-256 and stored securely. Zensutra automatically deletes all AI conversations older than 90 days. We never share or sell your data.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-header">How does the Mood Tracker work? <i class="fas fa-chevron-down"></i></div>
+      <div class="faq-content">You can manually select your mood or use our AI facial recognition feature to detect it automatically via your webcam. The app then generates a weekly insights chart so you can understand your emotional patterns over time.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-header">Are the counselors licensed professionals? <i class="fas fa-chevron-down"></i></div>
+      <div class="faq-content">Absolutely. All counselors available for booking on Zensutra are board-certified psychologists or licensed clinical social workers specializing in student mental health and academic stress.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-header">What happens if I experience a crisis? <i class="fas fa-chevron-down"></i></div>
+      <div class="faq-content">If Zen AI detects keywords related to self-harm or severe crisis, it will immediately halt normal conversation and provide emergency hotline numbers and immediate coping resources.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-header">Can I use Zensutra without an account? <i class="fas fa-chevron-down"></i></div>
+      <div class="faq-content">Yes! By clicking "Continue as Guest" on the homepage, you can access the platform instantly. Your data will be tied to a temporary, anonymous session.</div>
+    </div>
+  </div>
+</main>
+
+<script>
+document.querySelectorAll('.faq-header').forEach(header => {
+  header.addEventListener('click', () => {
+    const item = header.parentElement;
+    item.classList.toggle('active');
+    
+    // Close other open items
+    document.querySelectorAll('.faq-item').forEach(other => {
+      if(other !== item) other.classList.remove('active');
+    });
+  });
+});
+</script>
+</body>
+</html>

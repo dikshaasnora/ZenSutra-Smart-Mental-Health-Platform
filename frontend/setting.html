@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Zensutra — Settings</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="dashboard.css">
+<style>
+.settings-section { margin-bottom:14px; }
+.settings-section .card-head { font-size:11px;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.3);font-weight:600;margin-bottom:16px; }
+.setting-row { display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05); }
+.setting-row:last-child { border-bottom:none; }
+.setting-label { font-size:14px;color:rgba(255,255,255,.8); }
+.setting-desc  { font-size:11px;color:var(--muted);margin-top:3px;max-width:360px; }
+.toggle-switch { width:44px;height:24px;background:rgba(255,255,255,.1);border-radius:100px;position:relative;cursor:pointer;transition:all .3s;flex-shrink:0; }
+.toggle-switch.on { background:var(--sage2); }
+.toggle-switch::after { content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.3s; }
+.toggle-switch.on::after { transform:translateX(20px); }
+.setting-input { background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:.2s; }
+.setting-input:focus { border-color:rgba(82,183,136,.4); }
+.setting-input option { background:#12181f; }
+.danger-zone { background:rgba(224,112,128,.06);border:1px solid rgba(224,112,128,.18);border-radius:16px;padding:20px; }
+.danger-zone .card-head { color:var(--rose); }
+.pw-row { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px; }
+.pw-input { background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:.2s;width:100%; }
+.pw-input:focus { border-color:rgba(82,183,136,.4); }
+.pw-input::placeholder { color:rgba(255,255,255,.25); }
+</style>
+</head>
+<body>
+<div class="bg-orbs"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+<div class="particles" id="particles"></div>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">🧠</div><div><div class="logo-name">Zensutra</div><div class="logo-tagline">Smart Mental Health</div></div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Overview</div>
+      <a href="dashboard.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-home"></i><span>Dashboard</span></a>
+      <a href="mood.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-heart-pulse"></i><span>Mood Tracker</span></a>
+      <div class="nav-group-label">Wellness Tools</div>
+      <a href="AI-support.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-robot"></i><span>Zen AI</span></a>
+      <a href="breathe.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-wind"></i><span>Breathe</span></a>
+      <a href="journal.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-book-open"></i><span>Journal</span></a>
+      <div class="nav-group-label">Care</div>
+      <a href="resources.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-layer-group"></i><span>Resources</span></a>
+      <a href="appointment.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-calendar-check"></i><span>Appointments</span></a>
+      <div class="nav-group-label">Account</div>
+      <a href="profile.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-user"></i><span>Profile</span></a>
+      <a href="setting.html" class="nav-link active"><div class="nav-dot"></div><i class="fas fa-sliders"></i><span>Settings</span></a>
+    </nav>
+    <div class="sidebar-footer"><div class="user-card"><div class="user-av" id="sidebar-av">U</div><div><div class="user-name" id="sidebar-name">User</div><div class="user-role">Premium</div></div><button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button></div></div>
+  </aside>
+
+  <main class="main-area">
+    <div class="main-inner">
+      <div class="page-header">
+        <div>
+          <div class="page-eyebrow">Customize</div>
+          <h1 class="page-title"><em>Settings</em></h1>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <!-- Profile card -->
+          <div class="card settings-section" style="margin-bottom:14px;">
+            <div class="card-head">Account</div>
+            <div style="display:flex;align-items:center;gap:16px;padding:14px;background:var(--glass);border-radius:12px;border:1px solid var(--border);margin-bottom:16px;">
+              <div class="user-av" id="profile-av" style="width:52px;height:52px;font-size:18px;">U</div>
+              <div>
+                <div style="font-size:17px;font-weight:600;color:#fff;" id="profile-name">Loading...</div>
+                <div style="font-size:13px;color:var(--muted);" id="profile-email">—</div>
+                <div style="font-size:11px;color:var(--sage2);margin-top:4px;" id="profile-member">Premium Member</div>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">Account verified</div><div class="setting-desc">Email verification status</div></div>
+              <span id="verified-badge" style="font-size:11px;padding:4px 10px;border-radius:100px;background:rgba(82,183,136,.15);color:var(--sage2);border:1px solid rgba(82,183,136,.2);">Loading...</span>
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">Member since</div></div>
+              <span id="member-since" style="font-size:13px;color:var(--muted);">—</span>
+            </div>
+          </div>
+
+          <!-- Change password -->
+          <div class="card settings-section">
+            <div class="card-head">Change Password</div>
+            <div class="pw-row">
+              <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:5px;">Current password</label><input class="pw-input" id="pw-current" type="password" placeholder="••••••••"></div>
+              <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:5px;">New password</label><input class="pw-input" id="pw-new" type="password" placeholder="Min. 6 chars"></div>
+            </div>
+            <button class="btn btn-primary" style="margin-top:14px;" onclick="changePassword()"><i class="fas fa-lock"></i> Update Password</button>
+          </div>
+        </div>
+
+        <div>
+          <!-- Notifications -->
+          <div class="card settings-section" style="margin-bottom:14px;">
+            <div class="card-head">Notifications</div>
+            <div class="setting-row">
+              <div><div class="setting-label">Daily mood reminder</div><div class="setting-desc">Remind me to log my mood each day</div></div>
+              <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">Breathing break prompts</div><div class="setting-desc">Hourly prompts during study hours</div></div>
+              <div class="toggle-switch" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">Appointment reminders</div><div class="setting-desc">30 min before each session</div></div>
+              <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">Weekly wellness summary</div><div class="setting-desc">Email digest of your week</div></div>
+              <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+            </div>
+          </div>
+
+          <!-- Privacy -->
+          <div class="card settings-section" style="margin-bottom:14px;">
+            <div class="card-head">Privacy & AI</div>
+            <div class="setting-row">
+              <div><div class="setting-label">Anonymous mode</div><div class="setting-desc">Hide identity in peer support groups</div></div>
+              <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">AI conversation memory</div><div class="setting-desc">Zen AI remembers past sessions</div></div>
+              <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">AI proactive suggestions</div><div class="setting-desc">Get tips based on your mood patterns</div></div>
+              <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">Language</div><div class="setting-desc">Chat language preference</div></div>
+              <select class="setting-input"><option>English</option><option>Hindi</option><option>Bilingual</option></select>
+            </div>
+          </div>
+
+          <!-- Data -->
+          <div class="card settings-section">
+            <div class="card-head">Your Data</div>
+            <div class="setting-row">
+              <div><div class="setting-label">Export all data</div><div class="setting-desc">Download your moods, reports, chats as JSON</div></div>
+              <button class="btn btn-ghost" style="font-size:12px;padding:7px 14px;" onclick="exportData()"><i class="fas fa-download"></i> Export</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Danger zone -->
+      <div class="danger-zone" style="margin-top:14px;">
+        <div class="card-head">⚠️ Danger Zone</div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label" style="color:var(--rose);">Delete account permanently</div>
+            <div class="setting-desc">All your data — moods, reports, conversations — will be permanently erased. This cannot be undone.</div>
+          </div>
+          <button class="btn" style="background:rgba(224,112,128,.15);color:var(--rose);border:1px solid rgba(224,112,128,.3);font-size:13px;" onclick="deleteAccount()">Delete Account</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+requireAuth();
+
+(function(){const c=document.getElementById('particles');for(let i=0;i<25;i++){const p=document.createElement('div');p.className='particle';p.style.cssText=`left:${Math.random()*100}%;width:${Math.random()*3+1}px;height:${Math.random()*3+1}px;animation-duration:${Math.random()*20+15}s;animation-delay:${-(Math.random()*20)}s;opacity:${Math.random()*.3+.1}`;c.appendChild(p);}})();
+
+async function loadAccountInfo() {
+  try {
+    const data = await authFetch('/api/settings/account-info');
+    if (!data?.success) return;
+    const info = data.accountInfo;
+    const user = getUser();
+    const initials = ((user.firstName||'').charAt(0)+(user.lastName||'').charAt(0)).toUpperCase()||'U';
+
+    document.getElementById('profile-av').textContent   = initials;
+    document.getElementById('sidebar-av').textContent   = initials;
+    document.getElementById('profile-name').textContent = (user.firstName||'')+ ' '+(user.lastName||'');
+    document.getElementById('sidebar-name').textContent = (user.firstName||'User')+' '+(user.lastName||'');
+    document.getElementById('profile-email').textContent = info.email;
+    document.getElementById('verified-badge').textContent = info.isVerified ? '✅ Verified' : '⚠️ Unverified';
+    document.getElementById('member-since').textContent = formatDate(info.createdAt);
+  } catch { }
+}
+
+async function changePassword() {
+  const current = document.getElementById('pw-current').value;
+  const newPw   = document.getElementById('pw-new').value;
+  if (!current || !newPw) { showError('Enter both passwords.'); return; }
+  if (newPw.length < 6) { showError('New password must be at least 6 characters.'); return; }
+  try {
+    const data = await authFetch('/api/settings/change-password', { method:'POST', body:{ currentPassword:current, newPassword:newPw } });
+    if (data?.success) {
+      showSuccess('Password updated successfully! 🔒');
+      document.getElementById('pw-current').value = '';
+      document.getElementById('pw-new').value = '';
+    } else showError(data?.message || 'Could not update password.');
+  } catch { showError('Connection error.'); }
+}
+
+async function exportData() {
+  try {
+    const data = await authFetch('/api/settings/export-data');
+    if (!data?.success) { showError('Export failed.'); return; }
+    const blob = new Blob([JSON.stringify(data.data, null, 2)], {type:'application/json'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a'); a.href=url; a.download='zensutra-data-export.json'; a.click();
+    URL.revokeObjectURL(url);
+    showSuccess('Data exported successfully! 📦');
+  } catch { showError('Export failed.'); }
+}
+
+async function deleteAccount() {
+  const confirm1 = confirm('Are you sure? This will permanently delete ALL your data.');
+  if (!confirm1) return;
+  const confirm2 = confirm('This cannot be undone. Type OK to confirm.');
+  if (!confirm2) return;
+  try {
+    const data = await authFetch('/api/settings/delete-account', { method:'DELETE' });
+    if (data?.success) {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+      showSuccess('Account deleted. Goodbye 💚');
+      setTimeout(() => window.location.href = 'index.html', 1500);
+    } else showError(data?.message || 'Could not delete account.');
+  } catch { showError('Connection error.'); }
+}
+
+loadAccountInfo();
+</script>
+</body>
+</html>

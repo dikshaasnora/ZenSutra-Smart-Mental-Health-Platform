@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Zensutra — Breathe</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="dashboard.css">
+<style>
+.breathe-center{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 0;}
+.breath-ring{
+  width:220px;height:220px;border-radius:50%;
+  border:2px solid rgba(82,183,136,.3);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;margin:0 auto;
+  transition:transform 4s ease-in-out, box-shadow 4s ease-in-out;
+}
+.breath-ring.inhale{transform:scale(1.18);box-shadow:0 0 50px rgba(82,183,136,.2);}
+.breath-ring.hold  {transform:scale(1.18);box-shadow:0 0 50px rgba(155,114,207,.25);}
+.breath-ring.exhale{transform:scale(1);box-shadow:0 0 0px transparent;}
+.breath-ring::before{content:'';position:absolute;inset:-16px;border-radius:50%;border:1px solid rgba(82,183,136,.12);}
+.breath-ring::after{content:'';position:absolute;inset:16px;border-radius:50%;background:rgba(45,106,79,.2);}
+.breath-inner{z-index:1;text-align:center;}
+.breath-label{font-family:'DM Serif Display',serif;font-size:20px;color:#fff;display:block;}
+.breath-count{font-family:'DM Serif Display',serif;font-size:52px;color:var(--sage2);line-height:1;display:block;margin-top:4px;}
+.breath-phase{font-size:13px;color:var(--muted);margin-top:16px;text-align:center;min-height:20px;}
+.technique-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:all .2s;margin-bottom:8px;}
+.technique-card:hover{background:rgba(255,255,255,.08);}
+.technique-card.active-tech{border-color:rgba(82,183,136,.4);background:rgba(82,183,136,.06);}
+.tech-icon{font-size:20px;margin-right:10px;}
+.tech-name{font-size:14px;font-weight:600;color:#fff;}
+.tech-desc{font-size:11px;color:var(--muted);margin-top:2px;}
+.session-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
+.sess-stat{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
+.sess-num{font-family:'DM Serif Display',serif;font-size:26px;color:var(--sage2);}
+.sess-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="bg-orbs"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+<div class="particles" id="particles"></div>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">🧠</div><div><div class="logo-name">Zensutra</div><div class="logo-tagline">Smart Mental Health</div></div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Overview</div>
+      <a href="dashboard.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-home"></i><span>Dashboard</span></a>
+      <a href="mood.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-heart-pulse"></i><span>Mood Tracker</span></a>
+      <div class="nav-group-label">Wellness Tools</div>
+      <a href="AI-support.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-robot"></i><span>Zen AI</span></a>
+      <a href="breathe.html" class="nav-link active"><div class="nav-dot"></div><i class="fas fa-wind"></i><span>Breathe</span></a>
+      <a href="journal.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-book-open"></i><span>Journal</span></a>
+      <div class="nav-group-label">Care</div>
+      <a href="resources.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-layer-group"></i><span>Resources</span></a>
+      <a href="appointment.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-calendar-check"></i><span>Appointments</span></a>
+      <div class="nav-group-label">Account</div>
+      <a href="profile.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-user"></i><span>Profile</span></a>
+      <a href="setting.html" class="nav-link"><div class="nav-dot"></div><i class="fas fa-sliders"></i><span>Settings</span></a>
+    </nav>
+    <div class="sidebar-footer"><div class="user-card"><div class="user-av" id="sidebar-av">U</div><div><div class="user-name" id="sidebar-name">User</div><div class="user-role">Premium</div></div><button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button></div></div>
+  </aside>
+  <main class="main-area">
+    <div class="main-inner">
+      <div class="page-header">
+        <div>
+          <div class="page-eyebrow">Calm your nervous system</div>
+          <h1 class="page-title">Guided <em>Breathing</em></h1>
+          <div class="page-sub">Science-backed exercises to reduce anxiety and restore calm</div>
+        </div>
+      </div>
+      <div class="two-col">
+        <!-- Breathing exercise -->
+        <div class="card">
+          <div class="card-head" id="tech-label">Box Breathing (4-4-4-4)</div>
+          <div class="breathe-center">
+            <div class="breath-ring" id="breath-ring">
+              <div class="breath-inner">
+                <span class="breath-label" id="breath-label">Ready</span>
+                <span class="breath-count" id="breath-count">4</span>
+              </div>
+            </div>
+            <div class="breath-phase" id="breath-phase">Press Start to begin</div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:center;margin-top:24px;">
+            <button class="btn btn-primary" id="start-btn" onclick="toggleBreath()" style="padding:12px 32px;font-size:15px;"><i class="fas fa-play"></i> Start</button>
+            <button class="btn btn-ghost" onclick="resetBreath()" style="padding:12px 20px;"><i class="fas fa-rotate"></i></button>
+          </div>
+          <div class="session-stats">
+            <div class="sess-stat"><div class="sess-num" id="sess-count">0</div><div class="sess-lbl">Cycles today</div></div>
+            <div class="sess-stat"><div class="sess-num" id="sess-time">0m</div><div class="sess-lbl">Time practiced</div></div>
+          </div>
+        </div>
+
+        <!-- Technique selector -->
+        <div class="card">
+          <div class="card-head">Choose technique</div>
+          <div class="technique-card active-tech" id="tech-box" onclick="selectTech('box',this)">
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+              <span class="tech-icon">🌊</span>
+              <div><div class="tech-name">Box Breathing (4-4-4-4)</div><div class="tech-desc">Inhale 4 · Hold 4 · Exhale 4 · Hold 4 — Navy SEALs technique for stress</div></div>
+            </div>
+          </div>
+          <div class="technique-card" id="tech-478" onclick="selectTech('478',this)">
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+              <span class="tech-icon">🌙</span>
+              <div><div class="tech-name">4-7-8 Breathing</div><div class="tech-desc">Inhale 4 · Hold 7 · Exhale 8 — Best for falling asleep and deep calm</div></div>
+            </div>
+          </div>
+          <div class="technique-card" id="tech-phys" onclick="selectTech('phys',this)">
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+              <span class="tech-icon">🌅</span>
+              <div><div class="tech-name">Physiological Sigh (5-2-7)</div><div class="tech-desc">Inhale 5 · Sip 2 · Long exhale 7 — Fastest way to reduce acute anxiety</div></div>
+            </div>
+          </div>
+          <div class="technique-card" id="tech-equal" onclick="selectTech('equal',this)">
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+              <span class="tech-icon">⚖️</span>
+              <div><div class="tech-name">Equal Breathing (5-5)</div><div class="tech-desc">Inhale 5 · Exhale 5 — Great for beginners and everyday balance</div></div>
+            </div>
+          </div>
+
+          <div class="card-head" style="margin-top:20px;">Why it works</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.7;" id="why-text">
+            Box breathing activates the parasympathetic nervous system by extending the exhale phase. This signals safety to the amygdala, lowering cortisol and heart rate within minutes.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+requireAuth();
+const u=getUser();
+document.getElementById('sidebar-av').textContent=((u.firstName||'').charAt(0)+(u.lastName||'').charAt(0)).toUpperCase()||'U';
+document.getElementById('sidebar-name').textContent=(u.firstName||'User')+' '+(u.lastName||'');
+(function(){const c=document.getElementById('particles');for(let i=0;i<25;i++){const p=document.createElement('div');p.className='particle';p.style.cssText=`left:${Math.random()*100}%;width:${Math.random()*3+1}px;height:${Math.random()*3+1}px;animation-duration:${Math.random()*20+15}s;animation-delay:${-(Math.random()*20)}s;opacity:${Math.random()*.3+.1}`;c.appendChild(p);}})();
+
+const TECHS = {
+  box:   { name:'Box Breathing (4-4-4-4)', phases:[{l:'Inhale',p:'Breathe in slowly...',s:4},{l:'Hold',p:'Hold gently...',s:4},{l:'Exhale',p:'Release slowly...',s:4},{l:'Hold',p:'Rest empty...',s:4}], why:'Box breathing activates the parasympathetic nervous system by extending the exhale. This signals safety to the amygdala, lowering cortisol and heart rate within minutes.' },
+  '478': { name:'4-7-8 Breathing',         phases:[{l:'Inhale',p:'Breathe in through nose...',s:4},{l:'Hold',p:'Hold still...',s:7},{l:'Exhale',p:'Exhale fully through mouth...',s:8}], why:'The 4-7-8 technique fills the lungs completely and uses an extended exhale to trigger the relaxation response — particularly effective before sleep.' },
+  phys:  { name:'Physiological Sigh (5-2-7)',phases:[{l:'Inhale',p:'Deep breath in through nose...',s:5},{l:'Sip',p:'Quick second sip of air...',s:2},{l:'Exhale',p:'Long, slow exhale through mouth...',s:7}], why:'A double inhale followed by a long exhale is the fastest way to offload carbon dioxide from the blood, instantly calming the nervous system.' },
+  equal: { name:'Equal Breathing (5-5)',    phases:[{l:'Inhale',p:'Breathe in...',s:5},{l:'Exhale',p:'Breathe out...',s:5}], why:'Equal breathing creates a balanced heart rate variability rhythm, reducing stress hormones and improving focus. Perfect for everyday use.' },
+};
+
+let currentTech='box', phaseIdx=0, countdown=4, timer=null, running=false;
+let cycles=0, startTime=null;
+
+function selectTech(key, el) {
+  if (running) resetBreath();
+  currentTech = key;
+  document.querySelectorAll('.technique-card').forEach(c=>c.classList.remove('active-tech'));
+  el.classList.add('active-tech');
+  const t = TECHS[key];
+  document.getElementById('tech-label').textContent = t.name;
+  document.getElementById('why-text').textContent = t.why;
+  document.getElementById('breath-count').textContent = t.phases[0].s;
+  document.getElementById('breath-label').textContent = 'Ready';
+  document.getElementById('breath-phase').textContent = 'Press Start to begin';
+}
+
+function toggleBreath() {
+  if (running) { pauseBreath(); return; }
+  running = true;
+  if (!startTime) startTime = Date.now();
+  document.getElementById('start-btn').innerHTML = '<i class="fas fa-pause"></i> Pause';
+  document.getElementById('start-btn').style.background = 'linear-gradient(135deg,#9b72cf,#7c4dcc)';
+  runPhase();
+}
+function pauseBreath() {
+  running = false; clearTimeout(timer);
+  document.getElementById('start-btn').innerHTML = '<i class="fas fa-play"></i> Resume';
+  document.getElementById('start-btn').style.background = '';
+}
+function resetBreath() {
+  running = false; clearTimeout(timer);
+  phaseIdx = 0; countdown = TECHS[currentTech].phases[0].s;
+  document.getElementById('start-btn').innerHTML = '<i class="fas fa-play"></i> Start';
+  document.getElementById('start-btn').style.background = '';
+  document.getElementById('breath-count').textContent = countdown;
+  document.getElementById('breath-label').textContent = 'Ready';
+  document.getElementById('breath-phase').textContent = 'Press Start to begin';
+  document.getElementById('breath-ring').className = 'breath-ring';
+}
+function runPhase() {
+  if (!running) return;
+  const phases = TECHS[currentTech].phases;
+  const phase  = phases[phaseIdx];
+  document.getElementById('breath-label').textContent = phase.l;
+  document.getElementById('breath-phase').textContent = phase.p;
+  countdown = phase.s;
+  const ring = document.getElementById('breath-ring');
+  ring.className = 'breath-ring ' + (phase.l==='Inhale'||phase.l==='Sip' ? 'inhale' : phase.l==='Exhale' ? 'exhale' : 'hold');
+  tick(phases);
+}
+function tick(phases) {
+  if (!running) return;
+  document.getElementById('breath-count').textContent = countdown;
+  if (countdown > 0) { countdown--; timer = setTimeout(()=>tick(phases), 1000); }
+  else {
+    phaseIdx = (phaseIdx + 1) % phases.length;
+    if (phaseIdx === 0) {
+      cycles++;
+      document.getElementById('sess-count').textContent = cycles;
+      const elapsed = Math.round((Date.now() - startTime) / 60000);
+      document.getElementById('sess-time').textContent = elapsed + 'm';
+    }
+    timer = setTimeout(()=>runPhase(), 200);
+  }
+}
+</script>
+</body>
+</html>
