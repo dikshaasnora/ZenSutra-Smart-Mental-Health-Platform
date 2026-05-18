@@ -13,6 +13,7 @@
 
 const crypto         = require('crypto');
 const jwt            = require('jsonwebtoken');
+const axios          = require('axios');
 const { OAuth2Client } = require('google-auth-library');
 const { User }       = require('./models');
 const sendEmail      = require('./emailservice');
@@ -251,52 +252,46 @@ exports.oauthCallback = async (req, res) => {
     let email, firstName, lastName;
 
     if (provider === 'google') {
-      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: process.env.GOOGLE_CLIENT_ID,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET,
-          code: actualCode,
-          grant_type: 'authorization_code',
-          redirect_uri: redirectUri
-        })
+      const tokenRes = await axios.post('https://oauth2.googleapis.com/token', new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        code: actualCode,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri
+      }).toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
-      const tokenData = await tokenRes.json();
+      const tokenData = tokenRes.data;
       if (!tokenData.access_token) throw new Error('Google token exchange failed');
 
-      const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      const userRes = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
         headers: { Authorization: `Bearer ${tokenData.access_token}` }
       });
-      const userData = await userRes.json();
+      const userData = userRes.data;
       email = userData.email;
       firstName = userData.given_name || 'Google';
       lastName = userData.family_name || 'User';
 
     } else if (provider === 'microsoft') {
-      const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: process.env.MICROSOFT_CLIENT_ID,
-          client_secret: process.env.MICROSOFT_CLIENT_SECRET,
-          code: actualCode,
-          grant_type: 'authorization_code',
-          redirect_uri: redirectUri
-        })
+      const tokenRes = await axios.post('https://login.microsoftonline.com/common/oauth2/v2.0/token', new URLSearchParams({
+        client_id: process.env.MICROSOFT_CLIENT_ID,
+        client_secret: process.env.MICROSOFT_CLIENT_SECRET,
+        code: actualCode,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri
+      }).toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
-      const tokenData = await tokenRes.json();
+      const tokenData = tokenRes.data;
       if (!tokenData.access_token) throw new Error('Microsoft token exchange failed');
 
-      const userRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+      const userRes = await axios.get('https://graph.microsoft.com/v1.0/me', {
         headers: { Authorization: `Bearer ${tokenData.access_token}` }
       });
-      const userData = await userRes.json();
+      const userData = userRes.data;
       email = userData.userPrincipalName || userData.mail;
       firstName = userData.givenName || 'Microsoft';
       lastName = userData.surname || 'User';
-
-
 
     } else if (provider === 'apple') {
       // Apple requires generating a JWT client_secret
@@ -309,18 +304,16 @@ exports.oauthCallback = async (req, res) => {
         keyid: process.env.APPLE_KEY_ID,
       });
 
-      const tokenRes = await fetch('https://appleid.apple.com/auth/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: process.env.APPLE_CLIENT_ID,
-          client_secret: clientSecret,
-          code: actualCode,
-          grant_type: 'authorization_code',
-          redirect_uri: redirectUri
-        })
+      const tokenRes = await axios.post('https://appleid.apple.com/auth/token', new URLSearchParams({
+        client_id: process.env.APPLE_CLIENT_ID,
+        client_secret: clientSecret,
+        code: actualCode,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri
+      }).toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
-      const tokenData = await tokenRes.json();
+      const tokenData = tokenRes.data;
       if (!tokenData.id_token) throw new Error('Apple token exchange failed');
 
       const decodedIdToken = jwt.decode(tokenData.id_token);
