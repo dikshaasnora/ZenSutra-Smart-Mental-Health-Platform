@@ -29,7 +29,7 @@ const GlobalAuthModal = () => {
     setDob('');
   }, [authModalTab]);
 
-  if (!showAuthModal) return null;
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -147,6 +147,7 @@ const GlobalAuthModal = () => {
   }, []);
 
   const handleSocialOAuth = (providerName) => {
+    if (!showAuthModal) return;
     const width = 500;
     const height = 620;
     const left = window.screen.width / 2 - width / 2;
@@ -334,6 +335,8 @@ const GlobalAuthModal = () => {
       navigate('/dashboard');
     }
   };
+
+  if (!showAuthModal) return null;
 
   return (
     <div className="modal-overlay active" style={{ zIndex: 99999 }} onClick={(e) => e.target.className.includes('modal-overlay') && closeAuthModal()}>
