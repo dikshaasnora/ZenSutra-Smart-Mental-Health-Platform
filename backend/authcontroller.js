@@ -209,128 +209,180 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-// ── POST /api/auth/google ────────────────────────────────────
-// Supports two flows:
-//   • credential  (ID token)    → verified via google-auth-library
-//   • accessToken (OAuth token) → verified via Google UserInfo API
-exports.googleAuth = async (req, res) => {
+// ── GET /api/auth/:provider ──────────────────────────────────
+exports.oauthRedirect = (req, res) => {
+  const provider = req.params.provider.toLowerCase();
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:5001';
+  let authUrl = '';
+
+  switch (provider) {
+    case 'google':
+      authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${backendUrl}/api/auth/google/callback&response_type=code&scope=email profile`;
+      break;
+    case 'microsoft':
+      authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${process.env.MICROSOFT_CLIENT_ID}&redirect_uri=${backendUrl}/api/auth/microsoft/callback&response_type=code&response_mode=query&scope=User.Read openid profile email`;
+      break;
+    case 'discord':
+      authUrl = `https://discord.com/api/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&redirect_uri=${backendUrl}/api/auth/discord/callback&response_type=code&scope=identify email`;
+      break;
+    case 'apple':
+      authUrl = `https://appleid.apple.com/auth/authorize?client_id=${process.env.APPLE_CLIENT_ID}&redirect_uri=${backendUrl}/api/auth/apple/callback&response_type=code id_token&response_mode=form_post&scope=name email`;
+      break;
+    default:
+      return res.status(400).json({ success: false, message: 'Unsupported provider' });
+  }
+
+  res.redirect(authUrl);
+};
+
+// ── GET or POST /api/auth/:provider/callback ─────────────────
+exports.oauthCallback = async (req, res) => {
+  const provider = req.params.provider.toLowerCase();
+  const { code } = req.query; // For Google, Microsoft, Discord
+  const bodyCode = req.body?.code; // For Apple (form_post)
+  const actualCode = code || bodyCode;
+
+  if (!actualCode) {
+    return res.redirect(`${process.env.FRONTEND_URL}/login?error=no_code`);
+  }
+
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:5001';
+  const redirectUri = `${backendUrl}/api/auth/${provider}/callback`;
+
   try {
-    const { credential, accessToken } = req.body;
     let email, firstName, lastName;
 
-    if (credential) {
-      // — Flow 1: ID token (GoogleLogin component / One Tap) —
-      const clientId = process.env.GOOGLE_CLIENT_ID;
-      if (!clientId)
-        return res.status(500).json({ success: false, message: 'Google OAuth not configured on server.' });
-
-      const client = new OAuth2Client(clientId);
-      const ticket = await client.verifyIdToken({ idToken: credential, audience: clientId });
-      const payload = ticket.getPayload();
-      email      = payload.email;
-      firstName  = payload.given_name  || (payload.name ? payload.name.split(' ')[0] : 'Google');
-      lastName   = payload.family_name || (payload.name ? payload.name.split(' ').slice(1).join(' ') : 'User');
-
-    } else if (accessToken) {
-      // — Flow 2: Access token (useGoogleLogin custom button) —
-      const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: `Bearer ${accessToken}` },
+    if (provider === 'google') {
+      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: process.env.GOOGLE_CLIENT_ID,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET,
+          code: actualCode,
+          grant_type: 'authorization_code',
+          redirect_uri: redirectUri
+        })
       });
-      if (!resp.ok) throw new Error('Google userinfo API returned ' + resp.status);
-      const info = await resp.json();
-      email      = info.email;
-      firstName  = info.given_name  || (info.name ? info.name.split(' ')[0] : 'Google');
-      lastName   = info.family_name || (info.name ? info.name.split(' ').slice(1).join(' ') : 'User');
+      const tokenData = await tokenRes.json();
+      if (!tokenData.access_token) throw new Error('Google token exchange failed');
 
-    } else {
-      return res.status(400).json({ success: false, message: 'Google credential or accessToken is required.' });
+      const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` }
+      });
+      const userData = await userRes.json();
+      email = userData.email;
+      firstName = userData.given_name || 'Google';
+      lastName = userData.family_name || 'User';
+
+    } else if (provider === 'microsoft') {
+      const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: process.env.MICROSOFT_CLIENT_ID,
+          client_secret: process.env.MICROSOFT_CLIENT_SECRET,
+          code: actualCode,
+          grant_type: 'authorization_code',
+          redirect_uri: redirectUri
+        })
+      });
+      const tokenData = await tokenRes.json();
+      if (!tokenData.access_token) throw new Error('Microsoft token exchange failed');
+
+      const userRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` }
+      });
+      const userData = await userRes.json();
+      email = userData.userPrincipalName || userData.mail;
+      firstName = userData.givenName || 'Microsoft';
+      lastName = userData.surname || 'User';
+
+    } else if (provider === 'discord') {
+      const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: process.env.DISCORD_CLIENT_ID,
+          client_secret: process.env.DISCORD_CLIENT_SECRET,
+          code: actualCode,
+          grant_type: 'authorization_code',
+          redirect_uri: redirectUri
+        })
+      });
+      const tokenData = await tokenRes.json();
+      if (!tokenData.access_token) throw new Error('Discord token exchange failed');
+
+      const userRes = await fetch('https://discord.com/api/users/@me', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` }
+      });
+      const userData = await userRes.json();
+      email = userData.email;
+      firstName = userData.global_name || userData.username || 'Discord';
+      lastName = 'User';
+
+    } else if (provider === 'apple') {
+      // Apple requires generating a JWT client_secret
+      const clientSecret = jwt.sign({}, process.env.APPLE_PRIVATE_KEY.replace(/\\n/g, '\n'), {
+        algorithm: 'ES256',
+        expiresIn: '180d',
+        issuer: process.env.APPLE_TEAM_ID,
+        audience: 'https://appleid.apple.com',
+        subject: process.env.APPLE_CLIENT_ID,
+        keyid: process.env.APPLE_KEY_ID,
+      });
+
+      const tokenRes = await fetch('https://appleid.apple.com/auth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: process.env.APPLE_CLIENT_ID,
+          client_secret: clientSecret,
+          code: actualCode,
+          grant_type: 'authorization_code',
+          redirect_uri: redirectUri
+        })
+      });
+      const tokenData = await tokenRes.json();
+      if (!tokenData.id_token) throw new Error('Apple token exchange failed');
+
+      const decodedIdToken = jwt.decode(tokenData.id_token);
+      email = decodedIdToken.email;
+      
+      // Apple only sends name on the FIRST ever login in req.body.user
+      const appleUser = req.body?.user ? JSON.parse(req.body.user) : null;
+      firstName = appleUser?.name?.firstName || 'Apple';
+      lastName = appleUser?.name?.lastName || 'User';
     }
 
-    if (!email)
-      return res.status(400).json({ success: false, message: 'Could not retrieve email from Google.' });
+    if (!email) {
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=missing_email`);
+    }
 
+    // ── Create or Find User ──
     let user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       const uuid = crypto.randomBytes(3).toString('hex');
       user = await User.create({
-        firstName: firstName || 'Google',
-        lastName:  lastName  || 'User',
-        email:     email.toLowerCase(),
-        mobile:    `goauth_${uuid}`,
-        dob:       new Date('2000-01-01'),
-        password:  crypto.randomBytes(16).toString('hex'),
-        isVerified: true,
-        role:      'user',
-      });
-    }
-
-    sendTokenResponse(user, 200, res);
-  } catch (err) {
-    console.error('Google auth error:', err.message);
-    res.status(401).json({ success: false, message: 'Google authentication failed. Please try again.' });
-  }
-};
-
-// ── POST /api/auth/microsoft ──────────────────────────────────
-// Accepts MSAL-verified account info (email + name) from the browser
-exports.microsoftAuth = async (req, res) => {
-  try {
-    const { email, firstName, lastName } = req.body;
-
-    if (!email)
-      return res.status(400).json({ success: false, message: 'Email is required for Microsoft login.' });
-
-    let user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      const uuid = crypto.randomBytes(3).toString('hex');
-      user = await User.create({
-        firstName: firstName || 'Microsoft',
-        lastName:  lastName  || 'User',
-        email:     email.toLowerCase(),
-        mobile:    `msauth_${uuid}`,
-        dob:       new Date('2000-01-01'),
-        password:  crypto.randomBytes(16).toString('hex'),
-        isVerified: true,
-        role:      'user',
-      });
-    }
-
-    sendTokenResponse(user, 200, res);
-  } catch (err) {
-    console.error('Microsoft auth error:', err.message);
-    res.status(500).json({ success: false, message: 'Microsoft authentication failed.' });
-  }
-};
-
-// ── POST /api/auth/social-login ───────────────────────────────
-exports.socialLogin = async (req, res) => {
-  try {
-    const { provider, email, firstName, lastName } = req.body;
-
-    if (!email || !provider)
-      return res.status(400).json({ success: false, message: 'Provider and email are required.' });
-
-    let user = await User.findOne({ email: email.toLowerCase() });
-
-    if (!user) {
-      // Create a passwordless verified user for the OAuth provider
-      const randomPassword = crypto.randomBytes(16).toString('hex');
-      const uuid = crypto.randomBytes(3).toString('hex');
-      user = await User.create({
-        firstName: firstName || provider.charAt(0).toUpperCase() + provider.slice(1),
-        lastName: lastName || 'User',
+        firstName: firstName,
+        lastName: lastName,
         email: email.toLowerCase(),
-        mobile: `oauth_${uuid}`,
+        mobile: `${provider}_${uuid}`,
         dob: new Date('2000-01-01'),
-        password: randomPassword,
+        password: crypto.randomBytes(16).toString('hex'),
         isVerified: true,
-        role: 'user'
+        role: 'user',
       });
     }
 
-    sendTokenResponse(user, 200, res);
+    // Generate Zensutra JWT
+    const token = signToken(user._id);
+
+    // Redirect to frontend with token
+    res.redirect(`${process.env.FRONTEND_URL}/dashboard?token=${token}`);
+
   } catch (err) {
-    console.error('Social login error:', err);
-    res.status(500).json({ success: false, message: 'Social authentication failed.' });
+    console.error(`${provider} auth error:`, err);
+    res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
   }
 };
