@@ -19,8 +19,12 @@
       "destination": "/backend/server.js"
     },
     {
+      "source": "/(.*\\.[a-zA-Z0-9]+)$",
+      "destination": "/frontend-react/$1"
+    },
+    {
       "source": "/((?!api/).*)",
-      "destination": "/index.html"
+      "destination": "/frontend-react/index.html"
     }
   ]
 }
