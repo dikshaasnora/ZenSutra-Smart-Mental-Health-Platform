@@ -146,14 +146,17 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/zensutra';
 mongoose
   .connect(MONGO_URI)
   .then(() => {
-    console.log('✅  MongoDB connected to:', MONGO_URI.replace(/\/\/.*@/, '//***@'));
-    app.listen(PORT, () =>
-      console.log(`🚀  Zensutra API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`)
-    );
+    console.log('✅  MongoDB connected successfully');
   })
   .catch((err) => {
     console.error('❌  MongoDB connection failed:', err.message);
-    process.exit(1);
   });
+
+// Only call app.listen when running locally, Vercel handles serverless routing via exports
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () =>
+    console.log(`🚀  Zensutra API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`)
+  );
+}
 
 module.exports = app; // for testing
