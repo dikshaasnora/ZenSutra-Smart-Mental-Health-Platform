@@ -2,21 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
-import { API_URL, MICROSOFT_CLIENT_ID } from '../config';
-import { useGoogleLogin } from '@react-oauth/google';
-import { PublicClientApplication } from '@azure/msal-browser';
 
-// ── Microsoft MSAL configuration ─────────────────────────────
-// The instance is created once outside the component so it's stable
-const msalInstance = new PublicClientApplication({
-  auth: {
-    clientId: MICROSOFT_CLIENT_ID,
-    authority: 'https://login.microsoftonline.com/common',
-    redirectUri: window.location.origin,
-  },
-  cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false },
-});
-let msalInitialized = false;
 
 const AuthPage = () => {
   const { login, token } = useAuth();
@@ -61,12 +47,7 @@ const AuthPage = () => {
     }
   }, [token]);
 
-  // Initialise MSAL once
-  useEffect(() => {
-    if (!msalInitialized) {
-      msalInstance.initialize().then(() => { msalInitialized = true; }).catch(() => {});
-    }
-  }, []);
+
 
   // ── Email / password handlers ─────────────────────────────────
   const handleLogin = async (e) => {
@@ -153,90 +134,9 @@ const AuthPage = () => {
     }
   };
 
-  // ── REAL Google OAuth ─────────────────────────────────────────
-  // useGoogleLogin triggers an OAuth popup → returns access_token
-  // We send the access_token to our backend, which calls Google's userinfo API
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        showInfo('Verifying Google account... 🔐');
-        const res  = await fetch(`${API_URL}/api/auth/google`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accessToken: tokenResponse.access_token }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          login(data.token, data.user);
-          showSuccess(`Welcome, ${data.user.firstName}! Signed in with Google 🎉`);
-          navigate('/dashboard');
-        } else {
-          showError(data.message || 'Google sign-in failed.');
-        }
-      } catch {
-        showError('Google authentication error. Please try again.');
-      } finally {
-        setOauthLoading(null);
-      }
-    },
-    onError: (err) => {
-      console.error('Google login error:', err);
-      showError('Google sign-in was cancelled or failed.');
-      setOauthLoading(null);
-    },
-    flow: 'implicit',
-  });
-
-  const handleGoogleLogin = () => {
-    setOauthLoading('google');
-    googleLogin();
-  };
-
-  // ── REAL Microsoft OAuth (MSAL) ───────────────────────────────
-  // MSAL loginPopup opens Microsoft's real sign-in window
-  // We extract email + name from the account claims and send to backend
-  const handleMicrosoftLogin = async () => {
-    setOauthLoading('microsoft');
-    try {
-      if (!msalInitialized) await msalInstance.initialize();
-      msalInitialized = true;
-
-      const result = await msalInstance.loginPopup({
-        scopes: ['openid', 'profile', 'email', 'User.Read'],
-        prompt: 'select_account',
-      });
-
-      const account = result.account;
-      const claims  = result.idTokenClaims || {};
-
-      const msEmail     = account.username || claims.email || claims.preferred_username;
-      const msFirstName = claims.given_name  || account.name?.split(' ')[0]  || 'Microsoft';
-      const msLastName  = claims.family_name || account.name?.split(' ').slice(1).join(' ') || 'User';
-
-      showInfo('Verifying Microsoft account... 🔐');
-      const res  = await fetch(`${API_URL}/api/auth/microsoft`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: msEmail, firstName: msFirstName, lastName: msLastName }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        login(data.token, data.user);
-        showSuccess(`Welcome, ${data.user.firstName}! Signed in with Microsoft 🎉`);
-        navigate('/dashboard');
-      } else {
-        showError(data.message || 'Microsoft sign-in failed.');
-      }
-    } catch (err) {
-      if (err?.errorCode === 'user_cancelled') {
-        showError('Microsoft sign-in was cancelled.');
-      } else {
-        console.error('Microsoft login error:', err);
-        showError('Microsoft sign-in failed. Please try again.');
-      }
-    } finally {
-      setOauthLoading(null);
-    }
+  const handleSocialOAuth = (providerName) => {
+    setOauthLoading(providerName.toLowerCase());
+    window.location.href = `${API_URL}/api/auth/${providerName.toLowerCase()}`;
   };
 
   // ── Shared OAuth button label helper ────────────────────────
@@ -308,9 +208,9 @@ const AuthPage = () => {
               {/* Real OAuth Buttons */}
               <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',marginBottom:'14px' }}>
                 <button
-                  id="btn-google-login"
+                  type="button"
                   className="btn btn-ghost oauth-btn"
-                  onClick={handleGoogleLogin}
+                  onClick={() => handleSocialOAuth('Google')}
                   disabled={!!oauthLoading}
                   style={{ background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',fontSize:'13px',fontWeight:500,padding:'11px',borderRadius:'12px',cursor:oauthLoading?'not-allowed':'pointer',opacity:oauthLoading&&oauthLoading!=='google'?0.5:1,transition:'all .2s' }}
                 >
@@ -318,13 +218,33 @@ const AuthPage = () => {
                 </button>
 
                 <button
-                  id="btn-microsoft-login"
+                  type="button"
                   className="btn btn-ghost oauth-btn"
-                  onClick={handleMicrosoftLogin}
+                  onClick={() => handleSocialOAuth('Microsoft')}
                   disabled={!!oauthLoading}
                   style={{ background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',fontSize:'13px',fontWeight:500,padding:'11px',borderRadius:'12px',cursor:oauthLoading?'not-allowed':'pointer',opacity:oauthLoading&&oauthLoading!=='microsoft'?0.5:1,transition:'all .2s' }}
                 >
                   {oauthBtnContent('microsoft','fa-windows','#00a4ef','Microsoft')}
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-ghost oauth-btn"
+                  onClick={() => handleSocialOAuth('Discord')}
+                  disabled={!!oauthLoading}
+                  style={{ background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',fontSize:'13px',fontWeight:500,padding:'11px',borderRadius:'12px',cursor:oauthLoading?'not-allowed':'pointer',opacity:oauthLoading&&oauthLoading!=='discord'?0.5:1,transition:'all .2s' }}
+                >
+                  {oauthBtnContent('discord','fa-discord','#5865F2','Discord')}
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-ghost oauth-btn"
+                  onClick={() => handleSocialOAuth('Apple')}
+                  disabled={!!oauthLoading}
+                  style={{ background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',fontSize:'13px',fontWeight:500,padding:'11px',borderRadius:'12px',cursor:oauthLoading?'not-allowed':'pointer',opacity:oauthLoading&&oauthLoading!=='apple'?0.5:1,transition:'all .2s' }}
+                >
+                  {oauthBtnContent('apple','fa-apple','#ffffff','Apple')}
                 </button>
               </div>
 
@@ -395,9 +315,9 @@ const AuthPage = () => {
 
               <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',marginBottom:'14px' }}>
                 <button
-                  id="btn-google-signup"
+                  type="button"
                   className="btn btn-ghost oauth-btn"
-                  onClick={handleGoogleLogin}
+                  onClick={() => handleSocialOAuth('Google')}
                   disabled={!!oauthLoading}
                   style={{ background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',fontSize:'13px',fontWeight:500,padding:'11px',borderRadius:'12px',cursor:oauthLoading?'not-allowed':'pointer',opacity:oauthLoading&&oauthLoading!=='google'?0.5:1,transition:'all .2s' }}
                 >
@@ -405,13 +325,33 @@ const AuthPage = () => {
                 </button>
 
                 <button
-                  id="btn-microsoft-signup"
+                  type="button"
                   className="btn btn-ghost oauth-btn"
-                  onClick={handleMicrosoftLogin}
+                  onClick={() => handleSocialOAuth('Microsoft')}
                   disabled={!!oauthLoading}
                   style={{ background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',fontSize:'13px',fontWeight:500,padding:'11px',borderRadius:'12px',cursor:oauthLoading?'not-allowed':'pointer',opacity:oauthLoading&&oauthLoading!=='microsoft'?0.5:1,transition:'all .2s' }}
                 >
                   {oauthBtnContent('microsoft','fa-windows','#00a4ef','Microsoft')}
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-ghost oauth-btn"
+                  onClick={() => handleSocialOAuth('Discord')}
+                  disabled={!!oauthLoading}
+                  style={{ background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',fontSize:'13px',fontWeight:500,padding:'11px',borderRadius:'12px',cursor:oauthLoading?'not-allowed':'pointer',opacity:oauthLoading&&oauthLoading!=='discord'?0.5:1,transition:'all .2s' }}
+                >
+                  {oauthBtnContent('discord','fa-discord','#5865F2','Discord')}
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-ghost oauth-btn"
+                  onClick={() => handleSocialOAuth('Apple')}
+                  disabled={!!oauthLoading}
+                  style={{ background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',fontSize:'13px',fontWeight:500,padding:'11px',borderRadius:'12px',cursor:oauthLoading?'not-allowed':'pointer',opacity:oauthLoading&&oauthLoading!=='apple'?0.5:1,transition:'all .2s' }}
+                >
+                  {oauthBtnContent('apple','fa-apple','#ffffff','Apple')}
                 </button>
               </div>
 

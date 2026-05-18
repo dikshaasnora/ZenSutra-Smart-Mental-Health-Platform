@@ -24,19 +24,56 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('authToken');
-    const storedUser = localStorage.getItem('userData');
-    if (storedToken) {
-      setToken(storedToken);
-    }
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error('Failed to parse user data', e);
+    const initAuth = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlToken = urlParams.get('token');
+      
+      let currentToken = urlToken || localStorage.getItem('authToken');
+      
+      if (urlToken) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        localStorage.setItem('authToken', urlToken);
+        setToken(urlToken);
       }
-    }
-    setLoading(false);
+
+      if (currentToken && currentToken !== 'guest') {
+        setToken(currentToken);
+        const storedUser = localStorage.getItem('userData');
+        if (storedUser && !urlToken) {
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch (e) {
+            console.error('Failed to parse user data', e);
+          }
+        } else {
+          // Fetch fresh user data from backend using the new token
+          try {
+            const res = await fetch(`${API_URL}/api/user/profile`, {
+              headers: { Authorization: `Bearer ${currentToken}` }
+            });
+            const data = await res.json();
+            if (data.success && data.data) {
+              const u = data.data;
+              const formattedUser = { id: u._id, firstName: u.firstName, lastName: u.lastName, email: u.email, role: u.role };
+              setUser(formattedUser);
+              localStorage.setItem('userData', JSON.stringify(formattedUser));
+            } else {
+              localStorage.removeItem('authToken');
+              localStorage.removeItem('userData');
+              setToken(null);
+              setUser(null);
+            }
+          } catch (e) {
+            console.error('Failed to fetch user', e);
+          }
+        }
+      } else if (currentToken === 'guest') {
+        setToken('guest');
+        setUser({ firstName: 'Guest', lastName: '' });
+      }
+      setLoading(false);
+    };
+    initAuth();
   }, []);
 
   const login = (newToken, userData) => {

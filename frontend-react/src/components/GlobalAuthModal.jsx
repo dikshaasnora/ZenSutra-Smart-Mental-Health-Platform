@@ -116,200 +116,10 @@ const GlobalAuthModal = () => {
     }
   };
 
-  useEffect(() => {
-    const handleOAuthMessage = async (event) => {
-      if (event.data?.success && event.data?.provider) {
-        const { email, firstName, lastName, provider } = event.data;
-        showInfo(`Completing authentication with ${provider}... 🌿`);
-        try {
-          const res = await fetch(`${API_URL}/api/auth/social-login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ provider, email, firstName, lastName }),
-          });
-          const data = await res.json();
-          if (data.success) {
-            login(data.token, data.user);
-            showSuccess(`Welcome, ${data.user.firstName}! Successfully logged in via ${provider}! 🎉`);
-            closeAuthModal();
-            navigate('/dashboard');
-          } else {
-            showError('Social sign-in failed.');
-          }
-        } catch {
-          showError('Server connection failed during OAuth.');
-        }
-      }
-    };
-
-    window.addEventListener('message', handleOAuthMessage);
-    return () => window.removeEventListener('message', handleOAuthMessage);
-  }, []);
-
   const handleSocialOAuth = (providerName) => {
     if (!showAuthModal) return;
-    const width = 500;
-    const height = 620;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
-    
-    const popup = window.open(
-      '',
-      `${providerName} Login`,
-      `width=${width},height=${height},top=${top},left=${left},status=no,menubar=no,toolbar=no`
-    );
-
-    if (!popup) {
-      showError('Popup blocked! Please allow popups for authentication.');
-      return;
-    }
-
-    const isGoogle = providerName === 'Google';
-    const primaryColor = isGoogle ? '#1a73e8' : '#00a4ef';
-    const icon = isGoogle ? 'fa-google' : 'fa-windows';
-    const iconColor = isGoogle ? '#ea4335' : '#00a4ef';
-
-    const popupContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Sign in with ${providerName}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #ffffff;
-            color: #202124;
-            margin: 0;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 90vh;
-            box-sizing: border-box;
-          }
-          .card {
-            width: 100%;
-            max-width: 380px;
-            padding: 40px 24px;
-            border: 1px solid #dadce0;
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-          }
-          .logo {
-            font-size: 40px;
-            color: ${iconColor};
-            margin-bottom: 16px;
-          }
-          h1 {
-            font-size: 24px;
-            font-weight: 400;
-            margin: 0 0 8px 0;
-            color: #202124;
-          }
-          p {
-            font-size: 14px;
-            color: #5f6368;
-            margin: 0 0 24px 0;
-          }
-          .input-group {
-            text-align: left;
-            margin-bottom: 20px;
-          }
-          label {
-            font-size: 12px;
-            font-weight: 600;
-            color: #5f6368;
-            display: block;
-            margin-bottom: 6px;
-          }
-          input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #dadce0;
-            border-radius: 4px;
-            font-size: 14px;
-            box-sizing: border-box;
-            transition: border 0.2s;
-          }
-          input:focus {
-            outline: none;
-            border-color: ${primaryColor};
-            box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
-          }
-          .btn {
-            width: 100%;
-            padding: 12px;
-            background: ${primaryColor};
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.2s;
-          }
-          .btn:hover {
-            background: ${isGoogle ? '#1557b0' : '#0084c7'};
-          }
-          .footer {
-            font-size: 12px;
-            color: #70757a;
-            margin-top: 24px;
-            line-height: 1.5;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <div class="logo"><i class="fab ${icon}"></i></div>
-          <h1>Sign in</h1>
-          <p>to continue to <b>ZenSutra Wellness</b></p>
-          
-          <form id="oauth-form">
-            <div class="input-group">
-              <label>First Name</label>
-              <input type="text" id="firstName" placeholder="Jane" required value="Jane">
-            </div>
-            <div class="input-group">
-              <label>Last Name</label>
-              <input type="text" id="lastName" placeholder="Doe" required value="Doe">
-            </div>
-            <div class="input-group">
-              <label>Email or phone</label>
-              <input type="email" id="email" placeholder="name@domain.com" required value="jane.doe@gmail.com">
-            </div>
-            <button type="submit" class="btn">Next & Grant Consent</button>
-          </form>
-          
-          <div class="footer">
-            To continue, Google/Microsoft will share your name, email address, and profile picture with ZenSutra.
-          </div>
-        </div>
-
-        <script>
-          document.getElementById('oauth-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const data = {
-              success: true,
-              firstName: document.getElementById('firstName').value,
-              lastName: document.getElementById('lastName').value,
-              email: document.getElementById('email').value,
-              provider: '${providerName.toLowerCase()}'
-            };
-            window.opener.postMessage(data, '*');
-            window.close();
-          });
-        </script>
-      </body>
-      </html>
-    `;
-
-    popup.document.write(popupContent);
-    popup.document.close();
+    const provider = providerName.toLowerCase();
+    window.location.href = `${API_URL}/api/auth/${provider}`;
   };
 
   const handleGuest = async () => {
@@ -382,11 +192,17 @@ const GlobalAuthModal = () => {
             </form>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
-              <button className="btn btn-ghost" onClick={() => handleSocialOAuth('Google')} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '12px', color: '#e8eaf0' }}>
+              <button type="button" className="btn btn-ghost" onClick={() => handleSocialOAuth('Google')} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '12px', color: '#e8eaf0' }}>
                 <i className="fab fa-google" style={{ color: '#ea4335' }}></i> Google
               </button>
-              <button className="btn btn-ghost" onClick={() => handleSocialOAuth('Microsoft')} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '12px', color: '#e8eaf0' }}>
+              <button type="button" className="btn btn-ghost" onClick={() => handleSocialOAuth('Microsoft')} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '12px', color: '#e8eaf0' }}>
                 <i className="fab fa-windows" style={{ color: '#00a4ef' }}></i> Microsoft
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={() => handleSocialOAuth('Discord')} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '12px', color: '#e8eaf0' }}>
+                <i className="fab fa-discord" style={{ color: '#5865F2' }}></i> Discord
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={() => handleSocialOAuth('Apple')} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '12px', color: '#e8eaf0' }}>
+                <i className="fab fa-apple" style={{ color: '#ffffff' }}></i> Apple
               </button>
             </div>
 
