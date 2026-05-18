@@ -12,11 +12,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "http://152.53.55.180:5599/api/:path*"
+      "destination": "http://luna.ender.co.in:5599/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "http://152.53.55.180:5599/uploads/:path*"
+      "destination": "http://luna.ender.co.in:5599/uploads/:path*"
     },
     {
       "source": "/((?!api/).*)",
