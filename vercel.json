@@ -20,7 +20,7 @@
     },
     {
       "source": "/((?!api/).*)",
-      "destination": "/index.html"
+      "destination": "/frontend-react/index.html"
     }
   ],
   "headers": [
