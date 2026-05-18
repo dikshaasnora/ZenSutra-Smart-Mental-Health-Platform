@@ -1,7 +1,8 @@
 const isLocal = window.location.hostname === 'localhost' ||
                   window.location.hostname === '127.0.0.1';
 
-export const API_URL = isLocal ? 'http://localhost:5001' : 'https://your-zensutra-api.onrender.com';
+// When deployed on Vercel (or production), use the Vercel URL
+export const API_URL = isLocal ? 'http://localhost:5001' : 'https://zensutra.vercel.app';
 export const ML_URL = isLocal ? 'http://localhost:5000' : API_URL;
 
 // ── OAuth Client IDs ──────────────────────────────────────────
