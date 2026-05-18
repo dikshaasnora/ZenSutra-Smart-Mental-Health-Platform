@@ -1,8 +1,8 @@
 const isLocal = window.location.hostname === 'localhost' ||
                   window.location.hostname === '127.0.0.1';
 
-// When deployed on Vercel (or production), use the Vercel URL
-export const API_URL = isLocal ? 'http://localhost:5001' : 'https://zensutra.vercel.app';
+// When deployed on Vercel (or production), use the active deployment URL dynamically
+export const API_URL = isLocal ? 'http://localhost:5001' : window.location.origin;
 export const ML_URL = isLocal ? 'http://localhost:5000' : API_URL;
 
 
