@@ -8,7 +8,7 @@
 //  All controllers follow:  validate → DB → respond
 // ============================================================
 
-const { Mood, Profile, User, MentalHealthReport, Appointment, Conversation } = require('./models');
+const { Mood, Profile, User, MentalHealthReport, Appointment, Conversation, Journal } = require('./models');
 const axios      = require('axios');
 const FormData   = require('form-data');
 const bcrypt     = require('bcryptjs');
@@ -31,14 +31,33 @@ exports.saveMood = async (req, res) => {
     if (label === undefined || value === undefined)
       return res.status(400).json({ success: false, message: 'Mood label and value required.' });
 
-    const mood = await Mood.create({
-      user: req.user.id, value, label,
-      energyLevel: energyLevel || 5,
-      notes: notes || '',
-      capturedVia: capturedVia || 'manual',
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    let mood = await Mood.findOne({
+      user: req.user.id,
+      createdAt: { $gte: startOfToday, $lte: endOfToday }
     });
 
-    res.status(201).json({ success: true, data: mood });
+    if (mood) {
+      mood.value = value;
+      mood.label = label;
+      mood.energyLevel = energyLevel || 5;
+      mood.notes = notes || '';
+      mood.capturedVia = capturedVia || 'manual';
+      await mood.save();
+    } else {
+      mood = await Mood.create({
+        user: req.user.id, value, label,
+        energyLevel: energyLevel || 5,
+        notes: notes || '',
+        capturedVia: capturedVia || 'manual',
+      });
+    }
+
+    res.status(mood.isNew ? 201 : 200).json({ success: true, data: mood, message: mood.isNew ? 'Mood logged.' : 'Mood updated for today.' });
   } catch (err) {
     console.error('saveMood error:', err);
     res.status(500).json({ success: false, message: 'Could not save mood.' });
@@ -98,12 +117,29 @@ exports.analyzeMoodFromImage = async (req, res) => {
       if (!mlRes.data?.moodLabel)
         throw new Error('Invalid ML response.');
 
-      const mood = await Mood.create({
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+
+      let mood = await Mood.findOne({
         user: req.user.id,
-        value: mlRes.data.mood,
-        label: mlRes.data.moodLabel,
-        capturedVia: 'ai',
+        createdAt: { $gte: startOfToday, $lte: endOfToday }
       });
+
+      if (mood) {
+        mood.value = mlRes.data.mood;
+        mood.label = mlRes.data.moodLabel;
+        mood.capturedVia = 'ai';
+        await mood.save();
+      } else {
+        mood = await Mood.create({
+          user: req.user.id,
+          value: mlRes.data.mood,
+          label: mlRes.data.moodLabel,
+          capturedVia: 'ai',
+        });
+      }
 
       return res.status(200).json({ success: true, data: { ...mlRes.data, id: mood._id, createdAt: mood.createdAt } });
 
@@ -112,7 +148,27 @@ exports.analyzeMoodFromImage = async (req, res) => {
       // Fallback: random mood (demo only)
       const labels = ['Angry','Disgust','Fear','Happy','Neutral','Sad','Surprise'];
       const value  = Math.floor(Math.random() * 7);
-      const mood   = await Mood.create({ user: req.user.id, value, label: labels[value], capturedVia: 'ai', notes: 'ML fallback' });
+
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+
+      let mood = await Mood.findOne({
+        user: req.user.id,
+        createdAt: { $gte: startOfToday, $lte: endOfToday }
+      });
+
+      if (mood) {
+        mood.value = value;
+        mood.label = labels[value];
+        mood.capturedVia = 'ai';
+        mood.notes = 'ML fallback';
+        await mood.save();
+      } else {
+        mood = await Mood.create({ user: req.user.id, value, label: labels[value], capturedVia: 'ai', notes: 'ML fallback' });
+      }
+
       return res.status(200).json({ success: true, data: { mood: value, moodLabel: labels[value], id: mood._id, createdAt: mood.createdAt }, note: 'ML unavailable — fallback used.' });
     }
 
@@ -426,19 +482,20 @@ exports.exportUserData = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [user, profile, moods, conversations, reports, appointments] = await Promise.all([
+    const [user, profile, moods, conversations, reports, appointments, journals] = await Promise.all([
       User.findById(userId).select('-password -verificationToken -resetPasswordToken'),
       Profile.findOne({ user: userId }),
       Mood.find({ user: userId }).sort({ createdAt: -1 }),
       Conversation.find({ user: userId }).sort({ createdAt: -1 }).limit(200),
       MentalHealthReport.find({ user: userId }).sort({ createdAt: -1 }),
       Appointment.find({ user: userId }).sort({ appointmentDate: -1 }),
+      Journal.find({ user: userId }).sort({ createdAt: -1 }),
     ]);
 
     res.status(200).json({
       success: true,
       exportedAt: new Date().toISOString(),
-      data: { user, profile, moods, conversations, reports, appointments },
+      data: { user, profile, moods, conversations, reports, appointments, journals },
     });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Could not export data.' });
@@ -457,10 +514,63 @@ exports.deleteAccount = async (req, res) => {
       Conversation.deleteMany({ user: userId }),
       MentalHealthReport.deleteMany({ user: userId }),
       Appointment.deleteMany({ user: userId }),
+      Journal.deleteMany({ user: userId }),
     ]);
 
     res.status(200).json({ success: true, message: 'Account and all data permanently deleted.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Could not delete account.' });
+  }
+};
+
+
+// ╔══════════════════════════════════════════════════════════════╗
+//  JOURNAL CONTROLLER
+//  POST   /api/journal      → saveJournal
+//  GET    /api/journal      → getJournals
+//  DELETE /api/journal/:id  → deleteJournal
+// ╚══════════════════════════════════════════════════════════════╝
+
+exports.saveJournal = async (req, res) => {
+  try {
+    const { title, body } = req.body;
+
+    if (!body || !body.trim()) {
+      return res.status(400).json({ success: false, message: 'Journal body is required.' });
+    }
+
+    const journal = await Journal.create({
+      user: req.user.id,
+      title: title ? title.trim() : 'Untitled',
+      body: body.trim(),
+    });
+
+    res.status(201).json({ success: true, message: 'Journal entry saved.', journal });
+  } catch (err) {
+    console.error('Save journal error:', err);
+    res.status(500).json({ success: false, message: 'Could not save journal entry.' });
+  }
+};
+
+exports.getJournals = async (req, res) => {
+  try {
+    const journals = await Journal.find({ user: req.user.id }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, journals });
+  } catch (err) {
+    console.error('Get journals error:', err);
+    res.status(500).json({ success: false, message: 'Could not retrieve journal entries.' });
+  }
+};
+
+exports.deleteJournal = async (req, res) => {
+  try {
+    const journal = await Journal.findOneAndDelete({ _id: req.params.id, user: req.user.id });
+    if (!journal) {
+      return res.status(404).json({ success: false, message: 'Journal entry not found.' });
+    }
+    res.status(200).json({ success: true, message: 'Journal entry deleted.' });
+  } catch (err) {
+    console.error('Delete journal error:', err);
+    res.status(500).json({ success: false, message: 'Could not delete journal entry.' });
   }
 };

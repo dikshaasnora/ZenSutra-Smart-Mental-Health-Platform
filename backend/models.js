@@ -136,9 +136,7 @@ const ProfileSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
-
 ProfileSchema.pre('save', function (next) { this.updatedAt = Date.now(); next(); });
-ProfileSchema.index({ user: 1 });
 
 const Profile = mongoose.models.Profile || mongoose.model('Profile', ProfileSchema);
 
@@ -342,12 +340,29 @@ AppointmentSchema.index({ user: 1, appointmentDate: 1 });
 AppointmentSchema.index({ patientEmail: 1, appointmentDate: 1 });
 AppointmentSchema.index({ specialistId: 1, appointmentDate: 1 });
 AppointmentSchema.index({ status: 1 });
-AppointmentSchema.index({ bookingId: 1 }, { unique: true });
 
 const Appointment = mongoose.models.Appointment || mongoose.model('Appointment', AppointmentSchema);
 
 
 // ─────────────────────────────────────────────────────────────
+//  7. JOURNAL MODEL
+//  Private wellness diary entries.
+// ─────────────────────────────────────────────────────────────
+const JournalSchema = new mongoose.Schema({
+  user:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  title:     { type: String, required: true, trim: true, default: 'Untitled' },
+  body:      { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+JournalSchema.pre('save', function (next) { this.updatedAt = Date.now(); next(); });
+JournalSchema.index({ user: 1, createdAt: -1 });
+
+const Journal = mongoose.models.Journal || mongoose.model('Journal', JournalSchema);
+
+
+// ─────────────────────────────────────────────────────────────
 //  Exports
 // ─────────────────────────────────────────────────────────────
-module.exports = { User, Profile, Mood, Conversation, MentalHealthReport, Appointment };
+module.exports = { User, Profile, Mood, Conversation, MentalHealthReport, Appointment, Journal };

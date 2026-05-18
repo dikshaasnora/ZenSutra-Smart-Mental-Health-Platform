@@ -43,6 +43,8 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5500',
   'http://127.0.0.1:5500',
+  'http://localhost:5173',
+  'http://localhost:5174',
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
@@ -92,7 +94,7 @@ app.use('/frontend', express.static(path.join(__dirname, '../frontend')));
 const {
   authRoutes, moodRoutes, aiRoutes,
   mentalHealthRoutes, appointmentRoutes,
-  profileRoutes, settingsRoutes,
+  profileRoutes, settingsRoutes, journalRoutes,
 } = require('./routes');
 
 // ── 6. Mount Routes ───────────────────────────────────────────
@@ -104,6 +106,7 @@ const {
 //   /api/appointments → book / manage counselor appointments
 //   /api/user         → user profile CRUD
 //   /api/settings     → account info, email change, password change, data export
+//   /api/journal      → private diary entries CRUD
 
 app.use('/api/auth',          authLimiter, authRoutes);
 app.use('/api/mood',          moodRoutes);
@@ -112,6 +115,7 @@ app.use('/api/mental-health', mentalHealthRoutes);
 app.use('/api/appointments',  appointmentRoutes);
 app.use('/api/user',          profileRoutes);
 app.use('/api/settings',      settingsRoutes);
+app.use('/api/journal',       journalRoutes);
 
 // ── 7. Health Check ───────────────────────────────────────────
 app.get('/health', (req, res) =>

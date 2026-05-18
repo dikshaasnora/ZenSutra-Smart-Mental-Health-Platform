@@ -11,10 +11,11 @@
 //    POST /api/auth/reset-password/:token → resetPassword
 // ============================================================
 
-const crypto  = require('crypto');
-const jwt     = require('jsonwebtoken');
-const { User }= require('./models');
-const sendEmail = require('./emailservice');
+const crypto         = require('crypto');
+const jwt            = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+const { User }       = require('./models');
+const sendEmail      = require('./emailservice');
 
 // Helper: sign JWT
 function signToken(id) {
@@ -205,5 +206,131 @@ exports.resetPassword = async (req, res) => {
   } catch (err) {
     console.error('resetPassword error:', err);
     res.status(500).json({ success: false, message: 'Could not reset password.' });
+  }
+};
+
+// ── POST /api/auth/google ────────────────────────────────────
+// Supports two flows:
+//   • credential  (ID token)    → verified via google-auth-library
+//   • accessToken (OAuth token) → verified via Google UserInfo API
+exports.googleAuth = async (req, res) => {
+  try {
+    const { credential, accessToken } = req.body;
+    let email, firstName, lastName;
+
+    if (credential) {
+      // — Flow 1: ID token (GoogleLogin component / One Tap) —
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      if (!clientId)
+        return res.status(500).json({ success: false, message: 'Google OAuth not configured on server.' });
+
+      const client = new OAuth2Client(clientId);
+      const ticket = await client.verifyIdToken({ idToken: credential, audience: clientId });
+      const payload = ticket.getPayload();
+      email      = payload.email;
+      firstName  = payload.given_name  || (payload.name ? payload.name.split(' ')[0] : 'Google');
+      lastName   = payload.family_name || (payload.name ? payload.name.split(' ').slice(1).join(' ') : 'User');
+
+    } else if (accessToken) {
+      // — Flow 2: Access token (useGoogleLogin custom button) —
+      const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!resp.ok) throw new Error('Google userinfo API returned ' + resp.status);
+      const info = await resp.json();
+      email      = info.email;
+      firstName  = info.given_name  || (info.name ? info.name.split(' ')[0] : 'Google');
+      lastName   = info.family_name || (info.name ? info.name.split(' ').slice(1).join(' ') : 'User');
+
+    } else {
+      return res.status(400).json({ success: false, message: 'Google credential or accessToken is required.' });
+    }
+
+    if (!email)
+      return res.status(400).json({ success: false, message: 'Could not retrieve email from Google.' });
+
+    let user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      const uuid = crypto.randomBytes(3).toString('hex');
+      user = await User.create({
+        firstName: firstName || 'Google',
+        lastName:  lastName  || 'User',
+        email:     email.toLowerCase(),
+        mobile:    `goauth_${uuid}`,
+        dob:       new Date('2000-01-01'),
+        password:  crypto.randomBytes(16).toString('hex'),
+        isVerified: true,
+        role:      'user',
+      });
+    }
+
+    sendTokenResponse(user, 200, res);
+  } catch (err) {
+    console.error('Google auth error:', err.message);
+    res.status(401).json({ success: false, message: 'Google authentication failed. Please try again.' });
+  }
+};
+
+// ── POST /api/auth/microsoft ──────────────────────────────────
+// Accepts MSAL-verified account info (email + name) from the browser
+exports.microsoftAuth = async (req, res) => {
+  try {
+    const { email, firstName, lastName } = req.body;
+
+    if (!email)
+      return res.status(400).json({ success: false, message: 'Email is required for Microsoft login.' });
+
+    let user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      const uuid = crypto.randomBytes(3).toString('hex');
+      user = await User.create({
+        firstName: firstName || 'Microsoft',
+        lastName:  lastName  || 'User',
+        email:     email.toLowerCase(),
+        mobile:    `msauth_${uuid}`,
+        dob:       new Date('2000-01-01'),
+        password:  crypto.randomBytes(16).toString('hex'),
+        isVerified: true,
+        role:      'user',
+      });
+    }
+
+    sendTokenResponse(user, 200, res);
+  } catch (err) {
+    console.error('Microsoft auth error:', err.message);
+    res.status(500).json({ success: false, message: 'Microsoft authentication failed.' });
+  }
+};
+
+// ── POST /api/auth/social-login ───────────────────────────────
+exports.socialLogin = async (req, res) => {
+  try {
+    const { provider, email, firstName, lastName } = req.body;
+
+    if (!email || !provider)
+      return res.status(400).json({ success: false, message: 'Provider and email are required.' });
+
+    let user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      // Create a passwordless verified user for the OAuth provider
+      const randomPassword = crypto.randomBytes(16).toString('hex');
+      const uuid = crypto.randomBytes(3).toString('hex');
+      user = await User.create({
+        firstName: firstName || provider.charAt(0).toUpperCase() + provider.slice(1),
+        lastName: lastName || 'User',
+        email: email.toLowerCase(),
+        mobile: `oauth_${uuid}`,
+        dob: new Date('2000-01-01'),
+        password: randomPassword,
+        isVerified: true,
+        role: 'user'
+      });
+    }
+
+    sendTokenResponse(user, 200, res);
+  } catch (err) {
+    console.error('Social login error:', err);
+    res.status(500).json({ success: false, message: 'Social authentication failed.' });
   }
 };

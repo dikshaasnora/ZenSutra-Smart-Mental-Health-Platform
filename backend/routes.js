@@ -76,6 +76,9 @@ authRouter.post('/login',              auth.login);
 authRouter.post('/forgot-password',    auth.forgotPassword);
 authRouter.post('/reset-password/:resetToken', auth.resetPassword);
 authRouter.post('/guest',              auth.createGuestAccount);
+authRouter.post('/social-login',       auth.socialLogin);
+authRouter.post('/google',             auth.googleAuth);      // Real Google OAuth (ID token verification)
+authRouter.post('/microsoft',          auth.microsoftAuth);   // Real Microsoft MSAL (email/name from verified MSAL session)
 
 module.exports.authRoutes = authRouter;
 
@@ -158,6 +161,19 @@ settingsRouter.get('/export-data',     ctrl.exportUserData);
 settingsRouter.delete('/delete-account', ctrl.deleteAccount);
 
 module.exports.settingsRoutes = settingsRouter;
+
+
+// ═══════════════════════════════════════════════════════════════
+//  JOURNAL ROUTES  /api/journal
+// ═══════════════════════════════════════════════════════════════
+const journalRouter = express.Router();
+journalRouter.use(protect);
+
+journalRouter.get('/',       ctrl.getJournals);
+journalRouter.post('/',      ctrl.saveJournal);
+journalRouter.delete('/:id', ctrl.deleteJournal);
+
+module.exports.journalRoutes = journalRouter;
 
 
 // ── Email utility (re-export so server.js routes can use it) ──

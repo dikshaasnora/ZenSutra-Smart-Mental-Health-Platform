@@ -1,0 +1,27 @@
+.breathe-center{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 0;}
+.breath-ring{
+  width:220px;height:220px;border-radius:50%;
+  border:2px solid rgba(82,183,136,.3);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;margin:0 auto;
+  transition:transform 4s ease-in-out, box-shadow 4s ease-in-out;
+}
+.breath-ring.inhale{transform:scale(1.18);box-shadow:0 0 50px rgba(82,183,136,.2);}
+.breath-ring.hold  {transform:scale(1.18);box-shadow:0 0 50px rgba(155,114,207,.25);}
+.breath-ring.exhale{transform:scale(1);box-shadow:0 0 0px transparent;}
+.breath-ring::before{content:'';position:absolute;inset:-16px;border-radius:50%;border:1px solid rgba(82,183,136,.12);}
+.breath-ring::after{content:'';position:absolute;inset:16px;border-radius:50%;background:rgba(45,106,79,.2);}
+.breath-inner{z-index:1;text-align:center;}
+.breath-label{font-family:'DM Serif Display',serif;font-size:20px;color:#fff;display:block;}
+.breath-count{font-family:'DM Serif Display',serif;font-size:52px;color:var(--sage2);line-height:1;display:block;margin-top:4px;}
+.breath-phase{font-size:13px;color:var(--muted);margin-top:16px;text-align:center;min-height:20px;}
+.technique-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:all .2s;margin-bottom:8px;}
+.technique-card:hover{background:rgba(255,255,255,.08);}
+.technique-card.active-tech{border-color:rgba(82,183,136,.4);background:rgba(82,183,136,.06);}
+.tech-icon{font-size:20px;margin-right:10px;}
+.tech-name{font-size:14px;font-weight:600;color:#fff;}
+.tech-desc{font-size:11px;color:var(--muted);margin-top:2px;}
+.session-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
+.sess-stat{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
+.sess-num{font-family:'DM Serif Display',serif;font-size:26px;color:var(--sage2);}
+.sess-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px;}
