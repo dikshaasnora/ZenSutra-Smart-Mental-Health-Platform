@@ -222,9 +222,7 @@ exports.oauthRedirect = (req, res) => {
     case 'microsoft':
       authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${process.env.MICROSOFT_CLIENT_ID}&redirect_uri=${backendUrl}/api/auth/microsoft/callback&response_type=code&response_mode=query&scope=User.Read openid profile email`;
       break;
-    case 'discord':
-      authUrl = `https://discord.com/api/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&redirect_uri=${backendUrl}/api/auth/discord/callback&response_type=code&scope=identify email`;
-      break;
+
     case 'apple':
       authUrl = `https://appleid.apple.com/auth/authorize?client_id=${process.env.APPLE_CLIENT_ID}&redirect_uri=${backendUrl}/api/auth/apple/callback&response_type=code id_token&response_mode=form_post&scope=name email`;
       break;
@@ -238,7 +236,7 @@ exports.oauthRedirect = (req, res) => {
 // ── GET or POST /api/auth/:provider/callback ─────────────────
 exports.oauthCallback = async (req, res) => {
   const provider = req.params.provider.toLowerCase();
-  const { code } = req.query; // For Google, Microsoft, Discord
+  const { code } = req.query; // For Google, Microsoft
   const bodyCode = req.body?.code; // For Apple (form_post)
   const actualCode = code || bodyCode;
 
@@ -298,28 +296,7 @@ exports.oauthCallback = async (req, res) => {
       firstName = userData.givenName || 'Microsoft';
       lastName = userData.surname || 'User';
 
-    } else if (provider === 'discord') {
-      const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: process.env.DISCORD_CLIENT_ID,
-          client_secret: process.env.DISCORD_CLIENT_SECRET,
-          code: actualCode,
-          grant_type: 'authorization_code',
-          redirect_uri: redirectUri
-        })
-      });
-      const tokenData = await tokenRes.json();
-      if (!tokenData.access_token) throw new Error('Discord token exchange failed');
 
-      const userRes = await fetch('https://discord.com/api/users/@me', {
-        headers: { Authorization: `Bearer ${tokenData.access_token}` }
-      });
-      const userData = await userRes.json();
-      email = userData.email;
-      firstName = userData.global_name || userData.username || 'Discord';
-      lastName = 'User';
 
     } else if (provider === 'apple') {
       // Apple requires generating a JWT client_secret

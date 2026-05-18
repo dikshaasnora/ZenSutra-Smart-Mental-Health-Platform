@@ -76,7 +76,7 @@ authRouter.post('/login',              auth.login);
 authRouter.post('/forgot-password',    auth.forgotPassword);
 authRouter.post('/reset-password/:resetToken', auth.resetPassword);
 authRouter.post('/guest',              auth.createGuestAccount);
-authRouter.post('/social-login',       auth.socialLogin);
+
 authRouter.get('/:provider',           auth.oauthRedirect);
 authRouter.get('/:provider/callback',  auth.oauthCallback);
 

@@ -198,9 +198,7 @@ const GlobalAuthModal = () => {
               <button type="button" className="btn btn-ghost" onClick={() => handleSocialOAuth('Microsoft')} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '12px', color: '#e8eaf0' }}>
                 <i className="fab fa-windows" style={{ color: '#00a4ef' }}></i> Microsoft
               </button>
-              <button type="button" className="btn btn-ghost" onClick={() => handleSocialOAuth('Discord')} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '12px', color: '#e8eaf0' }}>
-                <i className="fab fa-discord" style={{ color: '#5865F2' }}></i> Discord
-              </button>
+
               <button type="button" className="btn btn-ghost" onClick={() => handleSocialOAuth('Apple')} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '12px', color: '#e8eaf0' }}>
                 <i className="fab fa-apple" style={{ color: '#ffffff' }}></i> Apple
               </button>

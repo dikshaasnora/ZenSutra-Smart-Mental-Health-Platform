@@ -227,15 +227,7 @@ const AuthPage = () => {
                   {oauthBtnContent('microsoft','fa-windows','#00a4ef','Microsoft')}
                 </button>
 
-                <button
-                  type="button"
-                  className="btn btn-ghost oauth-btn"
-                  onClick={() => handleSocialOAuth('Discord')}
-                  disabled={!!oauthLoading}
-                  style={{ background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',fontSize:'13px',fontWeight:500,padding:'11px',borderRadius:'12px',cursor:oauthLoading?'not-allowed':'pointer',opacity:oauthLoading&&oauthLoading!=='discord'?0.5:1,transition:'all .2s' }}
-                >
-                  {oauthBtnContent('discord','fa-discord','#5865F2','Discord')}
-                </button>
+
 
                 <button
                   type="button"
@@ -334,15 +326,7 @@ const AuthPage = () => {
                   {oauthBtnContent('microsoft','fa-windows','#00a4ef','Microsoft')}
                 </button>
 
-                <button
-                  type="button"
-                  className="btn btn-ghost oauth-btn"
-                  onClick={() => handleSocialOAuth('Discord')}
-                  disabled={!!oauthLoading}
-                  style={{ background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',fontSize:'13px',fontWeight:500,padding:'11px',borderRadius:'12px',cursor:oauthLoading?'not-allowed':'pointer',opacity:oauthLoading&&oauthLoading!=='discord'?0.5:1,transition:'all .2s' }}
-                >
-                  {oauthBtnContent('discord','fa-discord','#5865F2','Discord')}
-                </button>
+
 
                 <button
                   type="button"
