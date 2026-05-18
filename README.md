@@ -1,5 +1,7 @@
 # 🌿 ZenSutra — Smart Mental Health Platform
 
+[![Live App](https://img.shields.io/badge/Live_App-zensutra.vercel.app-52b788?style=for-the-badge&logo=vercel)](https://zensutra.vercel.app/)
+
 ZenSutra is a next-generation, smart mental health platform tailored specifically for students. Combining state-of-the-art AI-driven wellness support, secure clinical assessments, interactive relaxation tools, and direct connectivity to professional human counseling, ZenSutra serves as a safe, confidential, and premium digital space for mental well-being.
 
 Originally designed with standard HTML/JS, ZenSutra has been fully migrated to a modular, high-performance **React.js (Vite)** frontend coupled with a robust, secure **Node.js/Express/MongoDB** backend.
