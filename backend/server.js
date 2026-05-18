@@ -15,14 +15,14 @@
 //    → Model (MongoDB via Mongoose) → Response
 // ============================================================
 
-const express    = require('express');
-const mongoose   = require('mongoose');
-const cors       = require('cors');
-const dotenv     = require('dotenv');
-const helmet     = require('helmet');
-const rateLimit  = require('express-rate-limit');
-const morgan     = require('morgan');
-const path       = require('path');
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
+const path = require('path');
 
 // ── 1. Load .env ─────────────────────────────────────────────
 dotenv.config();
@@ -45,6 +45,7 @@ const allowedOrigins = [
   'http://127.0.0.1:5500',
   'http://localhost:5173',
   'http://localhost:5174',
+  'https://zensutra.vercel.app',
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
@@ -53,7 +54,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error(`CORS policy: ${origin} not allowed`));
   },
-  methods:     ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
@@ -88,7 +89,7 @@ const authLimiter = rateLimit({
 
 // ── 4. Serve static frontend files (for production) ───────────
 app.use(express.static(path.join(__dirname, '../frontend')));
-app.use('/frontend', express.static(path.join(__dirname, '../frontend'))); 
+app.use('/frontend', express.static(path.join(__dirname, '../frontend')));
 
 // ── 5. Import Routes ──────────────────────────────────────────
 const {
@@ -108,14 +109,14 @@ const {
 //   /api/settings     → account info, email change, password change, data export
 //   /api/journal      → private diary entries CRUD
 
-app.use('/api/auth',          authLimiter, authRoutes);
-app.use('/api/mood',          moodRoutes);
-app.use('/api/ai',            aiRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/mood', moodRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/api/mental-health', mentalHealthRoutes);
-app.use('/api/appointments',  appointmentRoutes);
-app.use('/api/user',          profileRoutes);
-app.use('/api/settings',      settingsRoutes);
-app.use('/api/journal',       journalRoutes);
+app.use('/api/appointments', appointmentRoutes);
+app.use('/api/user', profileRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/journal', journalRoutes);
 
 // ── 7. Health Check ───────────────────────────────────────────
 app.get('/health', (req, res) =>
@@ -140,7 +141,7 @@ app.use((err, req, res, next) => {
 });
 
 // ── 10. Connect MongoDB & Start Server ────────────────────────
-const PORT     = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5001;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/zensutra';
 
 mongoose
