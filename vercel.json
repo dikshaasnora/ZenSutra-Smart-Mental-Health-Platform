@@ -1,5 +1,14 @@
 {
   "version": 2,
+  "builds": [
+    {
+      "src": "frontend-react/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/:path*",
@@ -10,8 +19,12 @@
       "destination": "http://152.53.55.180:5599/uploads/:path*"
     },
     {
+      "source": "/(.*\\.[a-zA-Z0-9]+)$",
+      "destination": "/frontend-react/$1"
+    },
+    {
       "source": "/((?!api/).*)",
-      "destination": "/index.html"
+      "destination": "/frontend-react/index.html"
     }
   ],
   "headers": [
