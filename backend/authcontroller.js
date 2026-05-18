@@ -213,7 +213,8 @@ exports.resetPassword = async (req, res) => {
 // ── GET /api/auth/:provider ──────────────────────────────────
 exports.oauthRedirect = (req, res) => {
   const provider = req.params.provider.toLowerCase();
-  const backendUrl = process.env.BACKEND_URL || 'http://localhost:5001';
+  const host = req.get('host') || 'zensutra.vercel.app';
+  const backendUrl = host.includes('localhost') ? 'http://localhost:5001' : `https://${host}`;
   let authUrl = '';
 
   switch (provider) {
@@ -241,11 +242,14 @@ exports.oauthCallback = async (req, res) => {
   const bodyCode = req.body?.code; // For Apple (form_post)
   const actualCode = code || bodyCode;
 
+  const host = req.get('host') || 'zensutra.vercel.app';
+  const frontendUrl = host.includes('localhost') ? 'http://localhost:5173' : `https://${host}`;
+
   if (!actualCode) {
-    return res.redirect(`${process.env.FRONTEND_URL}/login?error=no_code`);
+    return res.redirect(`${frontendUrl}/login?error=no_code`);
   }
 
-  const backendUrl = process.env.BACKEND_URL || 'http://localhost:5001';
+  const backendUrl = host.includes('localhost') ? 'http://localhost:5001' : `https://${host}`;
   const redirectUri = `${backendUrl}/api/auth/${provider}/callback`;
 
   try {
@@ -326,7 +330,7 @@ exports.oauthCallback = async (req, res) => {
     }
 
     if (!email) {
-      return res.redirect(`${process.env.FRONTEND_URL}/login?error=missing_email`);
+      return res.redirect(`${frontendUrl}/login?error=missing_email`);
     }
 
     // ── Create or Find User ──
@@ -349,10 +353,10 @@ exports.oauthCallback = async (req, res) => {
     const token = signToken(user._id);
 
     // Redirect to frontend with token
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard?token=${token}`);
+    res.redirect(`${frontendUrl}/dashboard?token=${token}`);
 
   } catch (err) {
     console.error(`${provider} auth error:`, err);
-    res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
+    res.redirect(`${frontendUrl}/login?error=auth_failed`);
   }
 };
