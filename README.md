@@ -97,7 +97,7 @@ ZenSutra has been fully migrated to a modular, high-performance **React.js (Vite
    npm install
    npm run dev
    ```
-   *The development server will launch locally (typically at `http://localhost:5173` or `5174`).*
+  
 
 ---
 
